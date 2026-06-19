@@ -58,6 +58,13 @@ public final class DatabaseMigration {
             recordMigration(conn, auditVersion, "audit events and optimization run metadata");
             logger.info("Applied EzBoost schema migration {}", auditVersion);
         }
+
+        final String snapshotVersion = "003";
+        if (!migrationApplied(conn, snapshotVersion)) {
+            ensureOptimizationReportSnapshotTable(conn);
+            recordMigration(conn, snapshotVersion, "durable optimization report snapshots");
+            logger.info("Applied EzBoost schema migration {}", snapshotVersion);
+        }
     }
 
     private static void ensureAuditAndOptimizationMetadataTables(Connection conn) throws SQLException {
@@ -78,6 +85,17 @@ public final class DatabaseMigration {
                         "algorithm_version VARCHAR(64) NOT NULL, demand_curve_mode VARCHAR(64) NOT NULL, " +
                         "created_at TIMESTAMP NOT NULL)");
             }
+        }
+    }
+
+    private static void ensureOptimizationReportSnapshotTable(Connection conn) throws SQLException {
+        if (tableExists(conn.getMetaData(), "OPTIMIZATIONREPORTSNAPSHOT")) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("CREATE TABLE OptimizationReportSnapshot (" +
+                    "request_id INT PRIMARY KEY, user_id INT NOT NULL, payload CLOB NOT NULL, " +
+                    "created_at TIMESTAMP NOT NULL)");
         }
     }
 

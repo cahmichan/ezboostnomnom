@@ -5,6 +5,7 @@ import com.ezboost.dao.OptimizationRequestDAO;
 import com.ezboost.dao.OptimizationResultDAO;
 import com.ezboost.dao.OptimizationRunMetadataDAO;
 import com.ezboost.dao.AuditEventDAO;
+import com.ezboost.dao.OptimizationReportSnapshotDAO;
 import com.ezboost.dao.RoomDataDAO;
 import com.ezboost.dao.SeasonalityDAO;
 import com.ezboost.ga.DemandCurve;
@@ -17,6 +18,7 @@ import com.ezboost.model.SeasonThreshold;
 import com.ezboost.model.User;
 import com.ezboost.service.EventSeasonService;
 import com.ezboost.service.SegmentPricingService;
+import com.ezboost.service.OptimizationReportSnapshot;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -137,21 +139,26 @@ public class RunGA extends HttpServlet {
                 logger.warn("Could not generate event forecast", e);
             }
 
+            double[] achievableRange = ga.getAchievableRange();
+            int eventAdjustedMonthCount = countAdjustedMonths(monthlyForecast);
+            List<String> constraintHighlights = buildConstraintHighlights(ga, optimizedSolution);
+            Map<String, String> priceConstraintStates = buildConstraintStates(ga, optimizedSolution);
+
             String persistenceWarning = null;
             try {
                 OptimizationResultDAO.saveResult(requestId, optimizedSolution, achievedRevenue);
                 OptimizationRunMetadataDAO.save(requestId, userId, expectedRevenue, achievedRevenue, randomSeed,
                         demandCurveFallback ? "Fallback default curve" : "Historical fit");
+                OptimizationReportSnapshotDAO.save(requestId, userId,
+                        new OptimizationReportSnapshot(optimizedSolution, expectedRevenue, achievedRevenue, segments,
+                                monthlyForecast, forecastYear,
+                                demandCurveFallback ? "Fallback default curve" : "Historical fit",
+                                achievableRange[0], achievableRange[1], constraintHighlights).toJson());
                 AuditEventDAO.record(userId, "OPTIMIZATION_RUN", "OptimizationRequest", "SUCCESS");
             } catch (Exception dbError) {
                 persistenceWarning = "Optimization completed, but the result could not be saved to history.";
                 logger.warn("Could not save optimization result for request {}", requestId, dbError);
             }
-
-            double[] achievableRange = ga.getAchievableRange();
-            int eventAdjustedMonthCount = countAdjustedMonths(monthlyForecast);
-            List<String> constraintHighlights = buildConstraintHighlights(ga, optimizedSolution);
-            Map<String, String> priceConstraintStates = buildConstraintStates(ga, optimizedSolution);
 
             request.setAttribute("requestId", requestId);
             request.setAttribute("expectedRevenue", expectedRevenue);

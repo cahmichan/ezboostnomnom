@@ -1,10 +1,12 @@
 package com.ezboost.servlet;
 
 import com.ezboost.dao.MarketSegmentDAO;
+import com.ezboost.dao.OptimizationReportSnapshotDAO;
 import com.ezboost.model.MarketSegment;
 import com.ezboost.model.Room;
 import com.ezboost.model.User;
 import com.ezboost.service.ExcelExportService;
+import com.ezboost.service.OptimizationReportSnapshot;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +34,18 @@ public class DownloadReportServlet extends HttpServlet {
             return;
         }
 
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Please log in again.");
+            return;
+        }
+
+        String requestIdParameter = request.getParameter("requestId");
+        if (requestIdParameter != null && !requestIdParameter.trim().isEmpty()) {
+            exportSnapshot(requestIdParameter, user, response);
+            return;
+        }
+
         List<Room> rooms = (List<Room>) session.getAttribute("bestSolution");
         Double expectedRevenue = (Double) session.getAttribute("expectedRevenue");
         Double estimatedRevenue = (Double) session.getAttribute("estimatedRevenue");
@@ -43,12 +57,10 @@ public class DownloadReportServlet extends HttpServlet {
 
         List<MarketSegment> marketSegments = (List<MarketSegment>) session.getAttribute("marketSegments");
         if (marketSegments == null || marketSegments.isEmpty()) {
-            User user = (User) session.getAttribute("user");
-            int userId = user != null ? user.getUserId() : 0;
-            marketSegments = MarketSegmentDAO.getAllSegments(userId);
+            marketSegments = MarketSegmentDAO.getAllSegments(user.getUserId());
             if (marketSegments == null || marketSegments.isEmpty()) {
-                MarketSegmentDAO.initializeDefaultSegments(userId);
-                marketSegments = MarketSegmentDAO.getAllSegments(userId);
+                MarketSegmentDAO.initializeDefaultSegments(user.getUserId());
+                marketSegments = MarketSegmentDAO.getAllSegments(user.getUserId());
             }
         }
 
@@ -78,6 +90,35 @@ public class DownloadReportServlet extends HttpServlet {
 
         try (OutputStream out = response.getOutputStream()) {
             out.write(reportBytes);
+        }
+    }
+
+    private void exportSnapshot(String requestIdParameter, User user, HttpServletResponse response) throws IOException {
+        final int requestId;
+        try {
+            requestId = Integer.parseInt(requestIdParameter);
+        } catch (NumberFormatException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid optimization request ID.");
+            return;
+        }
+        String payload = OptimizationReportSnapshotDAO.load(requestId, user.getUserId());
+        if (payload == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "No saved report exists for this optimization.");
+            return;
+        }
+        try {
+            OptimizationReportSnapshot snapshot = OptimizationReportSnapshot.fromJson(payload);
+            byte[] reportBytes = excelExportService.generateReport(snapshot.getRooms(), snapshot.getTargetRevenue(),
+                    snapshot.getEstimatedRevenue(), snapshot.getMarketSegments(), snapshot.getMonthlyForecast(),
+                    snapshot.getForecastYear(), snapshot.getDemandCurveMode(), snapshot.getAchievableMinRevenue(),
+                    snapshot.getAchievableMaxRevenue(), snapshot.getConstraintHighlights());
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=EzBoost_Optimization_Report_" + requestId + ".xlsx");
+            try (OutputStream out = response.getOutputStream()) {
+                out.write(reportBytes);
+            }
+        } catch (Exception e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Saved report could not be generated.");
         }
     }
 }
