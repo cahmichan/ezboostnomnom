@@ -132,7 +132,7 @@ public class EventSettingsServlet extends HttpServlet {
     }
 
     private String handleFetchHolidays(HttpServletRequest request, int userId) throws Exception {
-        int year = Integer.parseInt(request.getParameter("year"));
+        int year = parseSupportedYear(request.getParameter("year"));
         String apiKey = FutureEventDAO.getApiKey(userId);
         if (apiKey == null || apiKey.trim().isEmpty()) {
             throw new Exception("Please save your Calendarific API key first.");
@@ -151,7 +151,7 @@ public class EventSettingsServlet extends HttpServlet {
     }
 
     private String handleLoadSchoolHolidays(HttpServletRequest request, int userId) {
-        int year = Integer.parseInt(request.getParameter("year"));
+        int year = parseSupportedYear(request.getParameter("year"));
 
         int replacedCount = countEventsBySourceYear(userId, "PRESET", year);
         CalendarificService service = new CalendarificService();
@@ -175,6 +175,9 @@ public class EventSettingsServlet extends HttpServlet {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Event name is required");
         }
+        if (name.trim().length() > 255) {
+            throw new IllegalArgumentException("Event name must not exceed 255 characters");
+        }
         if (dateStr == null || dateStr.trim().isEmpty()) {
             throw new IllegalArgumentException("Event date is required");
         }
@@ -182,12 +185,17 @@ public class EventSettingsServlet extends HttpServlet {
         FutureEvent event = new FutureEvent();
         event.setUserId(userId);
         event.setEventName(name.trim());
-        event.setEventDate(Date.valueOf(dateStr));
+        Date eventDate = parseDate(dateStr, "Event date");
+        event.setEventDate(eventDate);
         if (endDateStr != null && !endDateStr.trim().isEmpty()) {
-            event.setEventEndDate(Date.valueOf(endDateStr));
+            Date endDate = parseDate(endDateStr, "Event end date");
+            if (endDate.before(eventDate)) {
+                throw new IllegalArgumentException("Event end date cannot be before the event date");
+            }
+            event.setEventEndDate(endDate);
         }
-        event.setEventType(eventType != null ? eventType : "CUSTOM");
-        event.setSeasonOverride(seasonOverride != null ? seasonOverride : "PEAK");
+        event.setEventType(validateEventType(eventType));
+        event.setSeasonOverride(validateSeasonOverride(seasonOverride));
         event.setSource("MANUAL");
         event.setActive(true);
 
@@ -213,7 +221,7 @@ public class EventSettingsServlet extends HttpServlet {
         }
 
         if (seasonOverride != null) {
-            target.setSeasonOverride(seasonOverride);
+            target.setSeasonOverride(validateSeasonOverride(seasonOverride));
         }
         if (activeStr != null) {
             target.setActive("true".equals(activeStr));
@@ -242,6 +250,44 @@ public class EventSettingsServlet extends HttpServlet {
             }
         }
         return count;
+    }
+
+    private int parseSupportedYear(String value) {
+        try {
+            int year = Integer.parseInt(value);
+            if (year < 2000 || year > 2100) {
+                throw new IllegalArgumentException("Year must be between 2000 and 2100");
+            }
+            return year;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Year must be a valid four-digit number");
+        }
+    }
+
+    private Date parseDate(String value, String label) {
+        try {
+            return Date.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(label + " must be a valid date");
+        }
+    }
+
+    private String validateEventType(String value) {
+        String eventType = value == null ? "CUSTOM" : value.trim();
+        if (!"CUSTOM".equals(eventType) && !"PUBLIC_HOLIDAY".equals(eventType)
+                && !"SCHOOL_BREAK".equals(eventType)) {
+            throw new IllegalArgumentException("Unsupported event type");
+        }
+        return eventType;
+    }
+
+    private String validateSeasonOverride(String value) {
+        String season = value == null ? "PEAK" : value.trim();
+        if (!"LOW".equals(season) && !"NORMAL".equals(season)
+                && !"PEAK".equals(season) && !"SUPER_PEAK".equals(season)) {
+            throw new IllegalArgumentException("Unsupported season override");
+        }
+        return season;
     }
 
     private void setEventSummaryAttributes(HttpServletRequest request, List<FutureEvent> events) {
