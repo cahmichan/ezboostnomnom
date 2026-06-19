@@ -13,6 +13,8 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.UUID;
+import org.slf4j.MDC;
 
 /** Applies response hardening and validates CSRF tokens for authenticated mutations. */
 public class RequestSecurityFilter implements Filter {
@@ -32,20 +34,27 @@ public class RequestSecurityFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        applyHeaders(httpResponse);
-        String path = httpRequest.getRequestURI().substring(httpRequest.getContextPath().length());
+        String requestId = UUID.randomUUID().toString();
+        httpResponse.setHeader("X-Request-Id", requestId);
+        MDC.put("requestId", requestId);
+        try {
+            applyHeaders(httpResponse);
+            String path = httpRequest.getRequestURI().substring(httpRequest.getContextPath().length());
 
-        if (requiresCsrfValidation(httpRequest, path) && !hasValidCsrfToken(httpRequest)) {
-            httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN,
-                    "Your form session has expired. Refresh the page and try again.");
-            return;
-        }
+            if (requiresCsrfValidation(httpRequest, path) && !hasValidCsrfToken(httpRequest)) {
+                httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN,
+                        "Your form session has expired. Refresh the page and try again.");
+                return;
+            }
 
-        HttpSession session = httpRequest.getSession(false);
-        if (session != null && session.getAttribute("user") != null) {
-            request.setAttribute(CSRF_PARAMETER, getOrCreateToken(session));
+            HttpSession session = httpRequest.getSession(false);
+            if (session != null && session.getAttribute("user") != null) {
+                request.setAttribute(CSRF_PARAMETER, getOrCreateToken(session));
+            }
+            chain.doFilter(request, response);
+        } finally {
+            MDC.remove("requestId");
         }
-        chain.doFilter(request, response);
     }
 
     public static String getOrCreateToken(HttpSession session) {

@@ -43,16 +43,42 @@ public final class DatabaseMigration {
      */
     private static void applyCurrentSchemaMigration(Connection conn) throws SQLException {
         final String version = "001";
-        if (migrationApplied(conn, version)) {
-            return;
+        if (!migrationApplied(conn, version)) {
+            ensureUserOnboardingColumns(conn);
+            ensureFutureEventTables(conn);
+            ensureActualRoomDataColumns(conn);
+            ensureMarketSegmentUserScopedConstraint(conn);
+            recordMigration(conn, version, "baseline ownership and onboarding hardening");
+            logger.info("Applied EzBoost schema migration {}", version);
         }
 
-        ensureUserOnboardingColumns(conn);
-        ensureFutureEventTables(conn);
-        ensureActualRoomDataColumns(conn);
-        ensureMarketSegmentUserScopedConstraint(conn);
-        recordMigration(conn, version, "baseline ownership and onboarding hardening");
-        logger.info("Applied EzBoost schema migration {}", version);
+        final String auditVersion = "002";
+        if (!migrationApplied(conn, auditVersion)) {
+            ensureAuditAndOptimizationMetadataTables(conn);
+            recordMigration(conn, auditVersion, "audit events and optimization run metadata");
+            logger.info("Applied EzBoost schema migration {}", auditVersion);
+        }
+    }
+
+    private static void ensureAuditAndOptimizationMetadataTables(Connection conn) throws SQLException {
+        DatabaseMetaData metadata = conn.getMetaData();
+        if (!tableExists(metadata, "AUDITEVENT")) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate("CREATE TABLE AuditEvent (" +
+                        "event_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY, " +
+                        "user_id INT NOT NULL, action VARCHAR(64) NOT NULL, entity_type VARCHAR(64) NOT NULL, " +
+                        "outcome VARCHAR(32) NOT NULL, created_at TIMESTAMP NOT NULL)");
+            }
+        }
+        if (!tableExists(metadata, "OPTIMIZATIONRUNMETADATA")) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate("CREATE TABLE OptimizationRunMetadata (" +
+                        "request_id INT PRIMARY KEY, user_id INT NOT NULL, target_revenue DOUBLE NOT NULL, " +
+                        "achieved_revenue DOUBLE NOT NULL, random_seed BIGINT NOT NULL, " +
+                        "algorithm_version VARCHAR(64) NOT NULL, demand_curve_mode VARCHAR(64) NOT NULL, " +
+                        "created_at TIMESTAMP NOT NULL)");
+            }
+        }
     }
 
     private static void ensureMigrationHistory(Connection conn) throws SQLException {

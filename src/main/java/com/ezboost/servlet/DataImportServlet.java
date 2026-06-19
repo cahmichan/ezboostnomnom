@@ -2,6 +2,7 @@ package com.ezboost.servlet;
 
 import com.ezboost.dao.RoomDataDAO;
 import com.ezboost.dao.SeasonalityDAO;
+import com.ezboost.dao.AuditEventDAO;
 import com.ezboost.ga.SeasonClassifierGA;
 import com.ezboost.model.MonthlySeasonData;
 import com.ezboost.model.Room;
@@ -265,6 +266,7 @@ public class DataImportServlet extends HttpServlet {
     private void saveMonthlyData(MonthlyImportPreview preview, HttpServletRequest request, int userId) {
         int savedCount = SeasonalityDAO.saveImportedMonthlyData(userId, preview.getImportedData(),
                 preview.getThreshold(), preview.isReplaceExisting());
+        AuditEventDAO.record(userId, "MONTHLY_IMPORT", "MonthlySeasonData", "SUCCESS");
 
         request.setAttribute("thresholds", preview.getThreshold());
         request.setAttribute("gaUsed", preview.isGaUsed());
@@ -310,6 +312,7 @@ public class DataImportServlet extends HttpServlet {
         List<Room> rooms = parseResult.getRooms();
 
         int savedCount = RoomDataDAO.saveRoomData(userId, rooms, preview.isReplaceExisting());
+        AuditEventDAO.record(userId, "ROOM_IMPORT", "ActualRoomData", "SUCCESS");
         int totalRooms = RoomDataImportUtil.getTotalRoomCount(rooms);
         double avgBaseRate = RoomDataImportUtil.getWeightedAverageBaseRate(rooms);
 

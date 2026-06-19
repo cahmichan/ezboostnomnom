@@ -1,6 +1,7 @@
 package com.ezboost.servlet;
 
 import com.ezboost.dao.FutureEventDAO;
+import com.ezboost.dao.AuditEventDAO;
 import com.ezboost.model.FutureEvent;
 import com.ezboost.model.User;
 import com.ezboost.service.CalendarificService;
@@ -64,6 +65,7 @@ public class EventSettingsServlet extends HttpServlet {
             switch (action != null ? action : "") {
                 case "saveApiKey":
                     handleSaveApiKey(request, userId);
+                    AuditEventDAO.record(userId, "API_KEY_SAVE", "UserApiSettings", "SUCCESS");
                     request.setAttribute("success", "API key saved successfully!");
                     break;
                 case "fetchHolidays":
@@ -74,6 +76,7 @@ public class EventSettingsServlet extends HttpServlet {
                     break;
                 case "addEvent":
                     handleAddEvent(request, userId);
+                    AuditEventDAO.record(userId, "EVENT_CREATE", "FutureEvent", "SUCCESS");
                     request.setAttribute("success", "Custom event added successfully!");
                     break;
                 case "updateEvent":
@@ -87,6 +90,7 @@ public class EventSettingsServlet extends HttpServlet {
                     break;
                 case "deleteEvent":
                     handleDeleteEvent(request, userId);
+                    AuditEventDAO.record(userId, "EVENT_DELETE", "FutureEvent", "SUCCESS");
                     request.setAttribute("success", "Event deleted successfully!");
                     break;
                 case "deleteAll":

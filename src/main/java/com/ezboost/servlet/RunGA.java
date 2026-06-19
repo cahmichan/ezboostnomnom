@@ -3,6 +3,8 @@ package com.ezboost.servlet;
 import com.ezboost.dao.MarketSegmentDAO;
 import com.ezboost.dao.OptimizationRequestDAO;
 import com.ezboost.dao.OptimizationResultDAO;
+import com.ezboost.dao.OptimizationRunMetadataDAO;
+import com.ezboost.dao.AuditEventDAO;
 import com.ezboost.dao.RoomDataDAO;
 import com.ezboost.dao.SeasonalityDAO;
 import com.ezboost.ga.DemandCurve;
@@ -138,6 +140,9 @@ public class RunGA extends HttpServlet {
             String persistenceWarning = null;
             try {
                 OptimizationResultDAO.saveResult(requestId, optimizedSolution, achievedRevenue);
+                OptimizationRunMetadataDAO.save(requestId, userId, expectedRevenue, achievedRevenue, randomSeed,
+                        demandCurveFallback ? "Fallback default curve" : "Historical fit");
+                AuditEventDAO.record(userId, "OPTIMIZATION_RUN", "OptimizationRequest", "SUCCESS");
             } catch (Exception dbError) {
                 persistenceWarning = "Optimization completed, but the result could not be saved to history.";
                 logger.warn("Could not save optimization result for request {}", requestId, dbError);
