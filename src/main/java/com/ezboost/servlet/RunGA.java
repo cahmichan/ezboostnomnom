@@ -205,7 +205,7 @@ public class RunGA extends HttpServlet {
             forwardError(request, response, "Invalid revenue value. Please enter a valid number.");
         } catch (Exception e) {
             logger.error("Exception in RunGA", e);
-            forwardError(request, response, "An error occurred during optimization: " + e.getMessage());
+            forwardError(request, response, "Optimization could not be completed. Please verify your setup and try again.");
         }
     }
 

@@ -113,12 +113,14 @@ public class EventSettingsServlet extends HttpServlet {
             }
         } catch (Exception e) {
             logger.error("Error processing event action", e);
+            String safeMessage = e instanceof IllegalArgumentException
+                    ? e.getMessage() : "The event action could not be completed. Please try again.";
             if (ajax) {
                 writeJson(response, HttpServletResponse.SC_BAD_REQUEST,
-                        "{\"success\":false,\"message\":\"" + escapeJson(e.getMessage()) + "\"}");
+                        "{\"success\":false,\"message\":\"" + escapeJson(safeMessage) + "\"}");
                 return;
             }
-            request.setAttribute("error", "Error: " + e.getMessage());
+            request.setAttribute("error", safeMessage);
         }
 
         doGet(request, response);

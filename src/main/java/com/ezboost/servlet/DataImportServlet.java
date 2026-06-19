@@ -138,7 +138,8 @@ public class DataImportServlet extends HttpServlet {
             }
         } catch (Exception e) {
             logger.error("Error processing action: {}", e.getMessage(), e);
-            request.setAttribute("error", "Error: " + e.getMessage());
+            request.setAttribute("error", e instanceof IllegalArgumentException
+                    ? e.getMessage() : "The requested data action could not be completed. Please try again.");
         }
 
         loadDataForDisplay(request, session, userId);
