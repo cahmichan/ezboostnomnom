@@ -65,6 +65,13 @@ public final class DatabaseMigration {
             recordMigration(conn, snapshotVersion, "durable optimization report snapshots");
             logger.info("Applied EzBoost schema migration {}", snapshotVersion);
         }
+
+        final String integrityVersion = "004";
+        if (!migrationApplied(conn, integrityVersion)) {
+            ensureDataIntegrityConstraints(conn);
+            recordMigration(conn, integrityVersion, "canonical identity and per-user data integrity constraints");
+            logger.info("Applied EzBoost schema migration {}", integrityVersion);
+        }
     }
 
     private static void ensureAuditAndOptimizationMetadataTables(Connection conn) throws SQLException {
@@ -97,6 +104,80 @@ public final class DatabaseMigration {
                     "request_id INT PRIMARY KEY, user_id INT NOT NULL, payload CLOB NOT NULL, " +
                     "created_at TIMESTAMP NOT NULL)");
         }
+    }
+
+    private static void ensureDataIntegrityConstraints(Connection conn) throws SQLException {
+        DatabaseMetaData metadata = conn.getMetaData();
+        ensureCanonicalUserIdentity(conn, metadata);
+        addUniqueConstraintIfSafe(conn, metadata, "ACTUALROOMDATA", "UQ_ROOM_USER_TYPE", "UserID, RoomType");
+        addUniqueConstraintIfSafe(conn, metadata, "MONTHLYSEASONDATA", "UQ_MONTHLY_USER_PERIOD", "UserID, MonthYear");
+        addUniqueConstraintIfSafe(conn, metadata, "SEASONTHRESHOLD", "UQ_THRESHOLD_USER", "UserID");
+        ensureIndexes(conn, metadata);
+    }
+
+    private static void ensureCanonicalUserIdentity(Connection conn, DatabaseMetaData metadata) throws SQLException {
+        if (!tableExists(metadata, "USER")) return;
+        if (!columnExists(metadata, "USER", "EMAIL_KEY")) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate("ALTER TABLE \"USER\" ADD COLUMN EMAIL_KEY VARCHAR(320)");
+            }
+        }
+        if (!columnExists(metadata, "USER", "USERNAME_KEY")) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate("ALTER TABLE \"USER\" ADD COLUMN USERNAME_KEY VARCHAR(255)");
+            }
+        }
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("UPDATE \"USER\" SET EMAIL_KEY = LOWER(TRIM(EMAIL)), USERNAME_KEY = LOWER(TRIM(USERNAME)) " +
+                    "WHERE EMAIL_KEY IS NULL OR USERNAME_KEY IS NULL");
+        }
+        addUniqueConstraintIfSafe(conn, metadata, "USER", "UQ_USER_EMAIL_KEY", "EMAIL_KEY");
+        addUniqueConstraintIfSafe(conn, metadata, "USER", "UQ_USER_USERNAME_KEY", "USERNAME_KEY");
+    }
+
+    private static void addUniqueConstraintIfSafe(Connection conn, DatabaseMetaData metadata, String tableName,
+                                                   String constraintName, String columns) throws SQLException {
+        if (!tableExists(metadata, tableName) || constraintExists(conn, tableName, constraintName)) return;
+        String duplicateSql = "SELECT " + columns + ", COUNT(*) FROM " + quotedTable(tableName) +
+                " GROUP BY " + columns + " HAVING COUNT(*) > 1 FETCH FIRST 1 ROW ONLY";
+        try (Statement duplicateCheck = conn.createStatement(); ResultSet duplicates = duplicateCheck.executeQuery(duplicateSql)) {
+            if (duplicates.next()) {
+                throw new SQLException("Cannot apply " + constraintName + ": duplicate existing data was found in " +
+                        tableName + ". Resolve duplicates before restarting EzBoost.");
+            }
+        }
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("ALTER TABLE " + quotedTable(tableName) + " ADD CONSTRAINT " + constraintName +
+                    " UNIQUE (" + columns + ")");
+        }
+    }
+
+    private static void ensureIndexes(Connection conn, DatabaseMetaData metadata) throws SQLException {
+        createIndexIfMissing(conn, metadata, "ACTUALROOMDATA", "IDX_ROOM_USER", "UserID");
+        createIndexIfMissing(conn, metadata, "MONTHLYSEASONDATA", "IDX_MONTHLY_USER", "UserID");
+        createIndexIfMissing(conn, metadata, "FUTUREEVENT", "IDX_EVENT_USER_DATE", "user_id, event_date");
+        createIndexIfMissing(conn, metadata, "OPTIMIZATIONREQUEST", "IDX_REQUEST_USER", "UserID");
+    }
+
+    private static void createIndexIfMissing(Connection conn, DatabaseMetaData metadata, String tableName,
+                                             String indexName, String columns) throws SQLException {
+        if (!tableExists(metadata, tableName) || indexExists(metadata, tableName, indexName)) return;
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("CREATE INDEX " + indexName + " ON " + quotedTable(tableName) + " (" + columns + ")");
+        }
+    }
+
+    private static boolean indexExists(DatabaseMetaData metadata, String tableName, String indexName) throws SQLException {
+        try (ResultSet rs = metadata.getIndexInfo(null, "APP", tableName, false, false)) {
+            while (rs.next()) {
+                if (indexName.equalsIgnoreCase(rs.getString("INDEX_NAME"))) return true;
+            }
+        }
+        return false;
+    }
+
+    private static String quotedTable(String tableName) {
+        return "USER".equalsIgnoreCase(tableName) ? "\"USER\"" : tableName;
     }
 
     private static void ensureMigrationHistory(Connection conn) throws SQLException {

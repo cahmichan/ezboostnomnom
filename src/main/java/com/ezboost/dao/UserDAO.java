@@ -17,7 +17,8 @@ public class UserDAO {
 
     public static boolean registerUser(User user) {
         String sql = "INSERT INTO \"USER\" (FIRSTNAME, LASTNAME, USERNAME, EMAIL, PASSWORD, PHONENUMBER, " +
-                "ONBOARDING_REQUIRED, ONBOARDING_COMPLETED, ONBOARDING_STEP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "ONBOARDING_REQUIRED, ONBOARDING_COMPLETED, ONBOARDING_STEP, EMAIL_KEY, USERNAME_KEY) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -31,6 +32,8 @@ public class UserDAO {
             stmt.setBoolean(7, true);
             stmt.setBoolean(8, false);
             stmt.setString(9, "IMPORT");
+            stmt.setString(10, canonical(user.getEmail()));
+            stmt.setString(11, canonical(user.getUsername()));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -105,7 +108,8 @@ public class UserDAO {
     }
 
     public static boolean updateUser(User user) {
-        String sql = "UPDATE \"USER\" SET FIRSTNAME=?, LASTNAME=?, USERNAME=?, EMAIL=?, PHONENUMBER=?, PASSWORD=? WHERE USERID=?";
+        String sql = "UPDATE \"USER\" SET FIRSTNAME=?, LASTNAME=?, USERNAME=?, EMAIL=?, PHONENUMBER=?, PASSWORD=?, " +
+                "EMAIL_KEY=?, USERNAME_KEY=? WHERE USERID=?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -115,7 +119,9 @@ public class UserDAO {
             stmt.setString(4, user.getEmail());
             stmt.setString(5, user.getPhoneNumber());
             stmt.setString(6, PasswordUtil.ensureHashed(user.getPassword()));
-            stmt.setInt(7, user.getUserId());
+            stmt.setString(7, canonical(user.getEmail()));
+            stmt.setString(8, canonical(user.getUsername()));
+            stmt.setInt(9, user.getUserId());
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -173,6 +179,10 @@ public class UserDAO {
         } catch (SQLException e) {
             logger.error("Failed to upgrade password hash for user {}", userId, e);
         }
+    }
+
+    private static String canonical(String value) {
+        return value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     private static User mapUser(ResultSet rs) throws SQLException {
