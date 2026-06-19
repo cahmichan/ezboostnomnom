@@ -18,7 +18,7 @@
         boolean navReady = RoomDataDAO.hasRoomData(navUser.getUserId())
                 && !SeasonalityDAO.getMonthlyDataByUser(navUser.getUserId()).isEmpty()
                 && SeasonalityDAO.getThresholdsByUser(navUser.getUserId()) != null;
-        boostLink = navReady ? "BoostMe.jsp" : "DataImport";
+        boostLink = navReady ? "BoostMe" : "DataImport";
     }
     if (navOnboarding) {
         navHomeLink = navCurrentUrl;

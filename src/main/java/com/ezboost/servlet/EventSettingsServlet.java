@@ -68,6 +68,11 @@ public class EventSettingsServlet extends HttpServlet {
                     AuditEventDAO.record(userId, "API_KEY_SAVE", "UserApiSettings", "SUCCESS");
                     request.setAttribute("success", "API key saved successfully!");
                     break;
+                case "removeApiKey":
+                    FutureEventDAO.deleteApiKey(userId);
+                    AuditEventDAO.record(userId, "API_KEY_REMOVE", "UserApiSettings", "SUCCESS");
+                    request.setAttribute("success", "API key removed successfully.");
+                    break;
                 case "fetchHolidays":
                     request.setAttribute("success", handleFetchHolidays(request, userId));
                     break;

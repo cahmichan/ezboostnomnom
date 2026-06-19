@@ -326,11 +326,18 @@ public class FutureEventDAO {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, userId);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return ApiKeyCipher.decrypt(rs.getString("setting_value"));
+            String storedValue = null;
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    storedValue = rs.getString("setting_value");
+                }
             }
-        } catch (SQLException e) {
+            if (storedValue != null) {
+                String apiKey = ApiKeyCipher.decrypt(storedValue);
+                migrateLegacyApiKey(conn, userId, storedValue, apiKey);
+                return apiKey;
+            }
+        } catch (SQLException | IllegalStateException e) {
             logger.error("Error fetching API key", e);
         }
         return null;
@@ -362,6 +369,33 @@ public class FutureEventDAO {
             logger.debug("Saved API key for user {}", userId);
         } catch (SQLException e) {
             logger.error("Error saving API key", e);
+        }
+    }
+
+    /** Removes a stored third-party credential without exposing its value. */
+    public static void deleteApiKey(int userId) {
+        String sql = "DELETE FROM UserApiSettings WHERE user_id = ? AND setting_key = 'calendarific_api_key'";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setInt(1, userId);
+            statement.executeUpdate();
+            logger.debug("Removed API key for user {}", userId);
+        } catch (SQLException e) {
+            logger.error("Error removing API key", e);
+        }
+    }
+
+    private static void migrateLegacyApiKey(Connection conn, int userId, String storedValue, String apiKey)
+            throws SQLException {
+        if (ApiKeyCipher.isEncrypted(storedValue) || !ApiKeyCipher.isConfigured() || apiKey == null || apiKey.isEmpty()) {
+            return;
+        }
+        try (PreparedStatement update = conn.prepareStatement(
+                "UPDATE UserApiSettings SET setting_value = ? WHERE user_id = ? AND setting_key = 'calendarific_api_key'")) {
+            update.setString(1, ApiKeyCipher.encrypt(apiKey));
+            update.setInt(2, userId);
+            update.executeUpdate();
+            logger.info("Migrated legacy Calendarific key to encrypted storage for user {}", userId);
         }
     }
 

@@ -84,7 +84,7 @@ public class MarketSegmentSettingsServlet extends HttpServlet {
                     request.setAttribute("success", "Market segments updated successfully!");
                     if (OnboardingUtil.STEP_SEGMENTS.equals(OnboardingUtil.getCurrentStep(user))) {
                         OnboardingUtil.completeOnboarding(userId, session);
-                        response.sendRedirect("BoostMe.jsp");
+                        response.sendRedirect("BoostMe");
                         return;
                     }
                     break;

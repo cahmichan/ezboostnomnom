@@ -84,6 +84,12 @@
                             <button type="submit" class="btn-primary-modern" style="height: fit-content;">
                                 <i class="bi bi-save"></i> Save Key
                             </button>
+                            <c:if test="${apiKeyConfigured}">
+                                <button type="submit" class="btn-secondary-modern" style="height: fit-content;"
+                                        onclick="this.form.querySelector('input[name=action]').value='removeApiKey';">
+                                    <i class="bi bi-trash"></i> Remove Key
+                                </button>
+                            </c:if>
                         </div>
                     </form>
                 </div>

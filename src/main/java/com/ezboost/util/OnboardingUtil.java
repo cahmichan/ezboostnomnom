@@ -59,7 +59,7 @@ public final class OnboardingUtil {
             case STEP_SEGMENTS:
                 return "SegmentSettings";
             default:
-                return "BoostMe.jsp";
+                return "BoostMe";
         }
     }
 

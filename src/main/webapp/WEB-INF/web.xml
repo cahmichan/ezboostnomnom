@@ -71,6 +71,15 @@
         <url-pattern>/RunGA</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>BoostMeServlet</servlet-name>
+        <servlet-class>com.ezboost.servlet.BoostMeServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>BoostMeServlet</servlet-name>
+        <url-pattern>/BoostMe</url-pattern>
+    </servlet-mapping>
+
     <!-- Update Profile Servlet -->
     <servlet>
         <servlet-name>UpdateProfileServlet</servlet-name>

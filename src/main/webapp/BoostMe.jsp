@@ -1,23 +1,16 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.*, java.text.DecimalFormat" %>
-<%@ page import="com.ezboost.dao.RoomDataDAO, com.ezboost.dao.SeasonalityDAO" %>
 <%@ page import="com.ezboost.model.Room, com.ezboost.model.Season, com.ezboost.model.MarketSegment, com.ezboost.model.FutureEvent, com.ezboost.model.User" %>
 
 <%
     DecimalFormat moneyFormat = new DecimalFormat("#,##0.00");
     DecimalFormat numberFormat = new DecimalFormat("0.00");
 
-    User boostUser = (User) session.getAttribute("user");
-    int roomTypeCount = 0;
-    int monthlyCount = 0;
-    boolean readyForOptimization = false;
-    if (boostUser != null) {
-        roomTypeCount = RoomDataDAO.getRoomTypeCount(boostUser.getUserId());
-        monthlyCount = SeasonalityDAO.getMonthlyDataByUser(boostUser.getUserId()).size();
-        readyForOptimization = roomTypeCount > 0
-                && monthlyCount > 0
-                && SeasonalityDAO.getThresholdsByUser(boostUser.getUserId()) != null;
-    }
+    int roomTypeCount = request.getAttribute("roomTypeCount") instanceof Integer
+            ? (Integer) request.getAttribute("roomTypeCount") : 0;
+    int monthlyCount = request.getAttribute("monthlyCount") instanceof Integer
+            ? (Integer) request.getAttribute("monthlyCount") : 0;
+    boolean readyForOptimization = Boolean.TRUE.equals(request.getAttribute("readyForOptimization"));
 
     Double expectedRevenue = (Double) request.getAttribute("expectedRevenue");
     Double estimatedRevenue = (Double) request.getAttribute("estimatedRevenue");

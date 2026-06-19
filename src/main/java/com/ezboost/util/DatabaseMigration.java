@@ -72,6 +72,13 @@ public final class DatabaseMigration {
             recordMigration(conn, integrityVersion, "canonical identity and per-user data integrity constraints");
             logger.info("Applied EzBoost schema migration {}", integrityVersion);
         }
+
+        final String ownershipVersion = "005";
+        if (!migrationApplied(conn, ownershipVersion)) {
+            ensureOwnershipForeignKeys(conn);
+            recordMigration(conn, ownershipVersion, "owner foreign keys for user-scoped records");
+            logger.info("Applied EzBoost schema migration {}", ownershipVersion);
+        }
     }
 
     private static void ensureAuditAndOptimizationMetadataTables(Connection conn) throws SQLException {
@@ -113,6 +120,47 @@ public final class DatabaseMigration {
         addUniqueConstraintIfSafe(conn, metadata, "MONTHLYSEASONDATA", "UQ_MONTHLY_USER_PERIOD", "UserID, MonthYear");
         addUniqueConstraintIfSafe(conn, metadata, "SEASONTHRESHOLD", "UQ_THRESHOLD_USER", "UserID");
         ensureIndexes(conn, metadata);
+    }
+
+    /**
+     * Makes ownership enforced by Derby. Orphans are a migration failure: they
+     * must be reconciled deliberately rather than reassigned or deleted.
+     */
+    private static void ensureOwnershipForeignKeys(Connection conn) throws SQLException {
+        DatabaseMetaData metadata = conn.getMetaData();
+        if (!tableExists(metadata, "USER")) return;
+
+        addForeignKeyIfSafe(conn, metadata, "ACTUALROOMDATA", "USERID", "FK_ROOM_USER");
+        addForeignKeyIfSafe(conn, metadata, "MONTHLYSEASONDATA", "USERID", "FK_MONTHLY_USER");
+        addForeignKeyIfSafe(conn, metadata, "SEASONTHRESHOLD", "USERID", "FK_THRESHOLD_USER");
+        addForeignKeyIfSafe(conn, metadata, "OPTIMIZATIONREQUEST", "USERID", "FK_REQUEST_USER");
+        addForeignKeyIfSafe(conn, metadata, "MARKETSEGMENT", "USER_ID", "FK_SEGMENT_USER");
+        addForeignKeyIfSafe(conn, metadata, "FUTUREEVENT", "USER_ID", "FK_EVENT_USER");
+        addForeignKeyIfSafe(conn, metadata, "USERAPISETTINGS", "USER_ID", "FK_API_SETTING_USER");
+        addForeignKeyIfSafe(conn, metadata, "AUDITEVENT", "USER_ID", "FK_AUDIT_USER");
+        addForeignKeyIfSafe(conn, metadata, "OPTIMIZATIONRUNMETADATA", "USER_ID", "FK_RUN_METADATA_USER");
+        addForeignKeyIfSafe(conn, metadata, "OPTIMIZATIONREPORTSNAPSHOT", "USER_ID", "FK_REPORT_SNAPSHOT_USER");
+    }
+
+    private static void addForeignKeyIfSafe(Connection conn, DatabaseMetaData metadata, String tableName,
+                                            String columnName, String constraintName) throws SQLException {
+        if (!tableExists(metadata, tableName) || !columnExists(metadata, tableName, columnName)
+                || constraintExists(conn, tableName, constraintName)) {
+            return;
+        }
+        String orphanSql = "SELECT 1 FROM " + quotedTable(tableName) + " child LEFT JOIN \"USER\" owner " +
+                "ON child." + columnName + " = owner.UserID WHERE child." + columnName +
+                " IS NOT NULL AND owner.UserID IS NULL FETCH FIRST 1 ROW ONLY";
+        try (Statement orphanCheck = conn.createStatement(); ResultSet orphans = orphanCheck.executeQuery(orphanSql)) {
+            if (orphans.next()) {
+                throw new SQLException("Cannot apply " + constraintName + ": orphaned " + columnName +
+                        " values were found in " + tableName + ". Reconcile the records before restarting EzBoost.");
+            }
+        }
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("ALTER TABLE " + quotedTable(tableName) + " ADD CONSTRAINT " + constraintName +
+                    " FOREIGN KEY (" + columnName + ") REFERENCES \"USER\" (UserID)");
+        }
     }
 
     private static void ensureCanonicalUserIdentity(Connection conn, DatabaseMetaData metadata) throws SQLException {

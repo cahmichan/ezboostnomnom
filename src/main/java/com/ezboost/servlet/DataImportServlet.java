@@ -464,7 +464,7 @@ public class DataImportServlet extends HttpServlet {
         boolean onboardingActive = OnboardingUtil.isOnboardingActive(onboardingUser);
         request.setAttribute("onboardingActive", onboardingActive);
         request.setAttribute("nextStepUrl", readyForOptimization
-                ? (onboardingActive ? "MultiplierSettings" : "BoostMe.jsp")
+                ? (onboardingActive ? "MultiplierSettings" : "BoostMe")
                 : "DataImport");
         request.setAttribute("nextStepLabel", readyForOptimization
                 ? (onboardingActive ? "Continue to Multipliers" : "Open BoostMe")

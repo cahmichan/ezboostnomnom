@@ -19,6 +19,7 @@ import com.ezboost.model.User;
 import com.ezboost.service.EventSeasonService;
 import com.ezboost.service.SegmentPricingService;
 import com.ezboost.service.OptimizationReportSnapshot;
+import com.ezboost.service.BoostMePageService;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -198,6 +199,7 @@ public class RunGA extends HttpServlet {
             session.setAttribute("demandCurveMode", demandCurveFallback ? "Fallback default curve" : "Historical fit");
             session.setAttribute("optimizationSeed", randomSeed);
 
+            BoostMePageService.prepare(request, user);
             RequestDispatcher rd = request.getRequestDispatcher("BoostMe.jsp");
             rd.forward(request, response);
         } catch (NumberFormatException e) {
@@ -212,12 +214,15 @@ public class RunGA extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.sendRedirect("BoostMe.jsp");
+        response.sendRedirect("BoostMe");
     }
 
     private void forwardError(HttpServletRequest request, HttpServletResponse response, String message)
             throws ServletException, IOException {
         request.setAttribute("error", message);
+        HttpSession session = request.getSession(false);
+        User user = session == null ? null : (User) session.getAttribute("user");
+        BoostMePageService.prepare(request, user);
         request.getRequestDispatcher("BoostMe.jsp").forward(request, response);
     }
 
