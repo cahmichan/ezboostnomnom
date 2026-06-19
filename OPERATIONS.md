@@ -19,6 +19,8 @@ asadmin create-system-properties EZBOOST_API_KEY_ENCRYPTION_KEY=<base64-32-byte-
 
 Restart the GlassFish domain after changing properties. `EZBOOST_API_KEY_ENCRYPTION_KEY` is required before saving a new Calendarific key. Keep the same key for the life of the database; losing it prevents decryption of encrypted API keys.
 
+`EZBOOST_DB_USER` and `EZBOOST_DB_PASSWORD` are mandatory. EzBoost fails fast at startup when either is absent instead of falling back to a credential embedded in source code.
+
 For local development, use `EZBOOST_ENV=development` and `EZBOOST_SECURE_COOKIES=false`. Never copy the development Derby password into a production deployment.
 
 ## Database migration and backup

@@ -22,16 +22,24 @@ public final class AppConfig {
         return Boolean.parseBoolean(get(key, Boolean.toString(defaultValue)));
     }
 
+    public static String getRequired(String key) {
+        String value = get(key, "");
+        if (value.isEmpty()) {
+            throw new IllegalStateException("Missing required application configuration: " + key);
+        }
+        return value;
+    }
+
     public static String databaseUrl() {
         return get("EZBOOST_DB_URL", "jdbc:derby://localhost:1527/ezboost_db");
     }
 
     public static String databaseUser() {
-        return get("EZBOOST_DB_USER", "app");
+        return getRequired("EZBOOST_DB_USER");
     }
 
     public static String databasePassword() {
-        return get("EZBOOST_DB_PASSWORD", "app");
+        return getRequired("EZBOOST_DB_PASSWORD");
     }
 
     public static boolean secureCookies() {
