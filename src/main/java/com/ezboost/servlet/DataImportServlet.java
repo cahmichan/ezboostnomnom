@@ -108,15 +108,18 @@ public class DataImportServlet extends HttpServlet {
                     break;
                 case "deleteMonthly":
                     handleDeleteMonthly(request, userId);
+                    AuditEventDAO.record(userId, "MONTHLY_DELETE", "MonthlySeasonData", "SUCCESS");
                     break;
                 case "deleteRooms":
                     RoomDataDAO.deleteAllRoomData(userId);
+                    AuditEventDAO.record(userId, "ROOM_DELETE", "ActualRoomData", "SUCCESS");
                     request.setAttribute("success", "Your room data was deleted successfully.");
                     break;
                 case "deleteAllData":
                     SeasonalityDAO.deleteAllUserMonthlyData(userId);
                     SeasonalityDAO.deleteThresholds(userId);
                     RoomDataDAO.deleteAllRoomData(userId);
+                    AuditEventDAO.record(userId, "IMPORT_DATA_DELETE", "ImportedData", "SUCCESS");
                     clearPreview(session, MONTHLY_PREVIEW_SESSION_KEY);
                     clearPreview(session, ROOM_PREVIEW_SESSION_KEY);
                     request.setAttribute("success", "All of your imported setup data was deleted successfully.");

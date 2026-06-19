@@ -2,6 +2,7 @@ package com.ezboost.servlet;
 
 import com.ezboost.dao.RoomDataDAO;
 import com.ezboost.dao.UserSettingsDAO;
+import com.ezboost.dao.AuditEventDAO;
 import com.ezboost.model.Room;
 import com.ezboost.model.User;
 import com.ezboost.model.UserMultiplierSettings;
@@ -79,6 +80,7 @@ public class MultiplierSettingsServlet extends HttpServlet {
             switch (action != null ? action : "") {
                 case "updateMultipliers":
                     int updatedCount = handleUpdateMultipliers(request, userId);
+                    AuditEventDAO.record(userId, "MULTIPLIER_UPDATE", "UserMultiplierSettings", "SUCCESS");
                     if (updatedCount > 0
                             && OnboardingUtil.STEP_MULTIPLIERS.equals(OnboardingUtil.getCurrentStep(user))) {
                         OnboardingUtil.advanceToStep(userId, OnboardingUtil.STEP_EVENTS, session);
@@ -88,6 +90,7 @@ public class MultiplierSettingsServlet extends HttpServlet {
                     break;
                 case "resetDefaults":
                     handleResetDefaults(userId);
+                    AuditEventDAO.record(userId, "MULTIPLIER_RESET", "UserMultiplierSettings", "SUCCESS");
                     request.setAttribute("success", "Multipliers reset to defaults!");
                     break;
                 default:
@@ -95,7 +98,8 @@ public class MultiplierSettingsServlet extends HttpServlet {
             }
         } catch (Exception e) {
             logger.error("[MultiplierSettingsServlet] Error: {}", e.getMessage(), e);
-            request.setAttribute("error", "Error: " + e.getMessage());
+            request.setAttribute("error", e instanceof IllegalArgumentException
+                    ? e.getMessage() : "Multiplier settings could not be updated. Please try again.");
         }
 
         // Reload settings and display

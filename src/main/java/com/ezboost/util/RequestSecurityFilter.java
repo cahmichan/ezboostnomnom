@@ -104,6 +104,10 @@ public class RequestSecurityFilter implements Filter {
         response.setHeader("Referrer-Policy", "same-origin");
         response.setHeader("Content-Security-Policy",
                 "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; "
-                        + "script-src 'self' 'unsafe-inline' https:; font-src 'self' https:; connect-src 'self'");
+                        + "script-src 'self' 'unsafe-inline' https:; font-src 'self' https:; connect-src 'self'; "
+                        + "base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+        if (AppConfig.secureCookies()) {
+            response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+        }
     }
 }

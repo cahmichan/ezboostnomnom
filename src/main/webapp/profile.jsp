@@ -211,8 +211,6 @@
                 <button class="modal-close" onclick="closeEditModal()">&times;</button>
             </div>
             <form action="UpdateProfileServlet" method="post" class="edit-form">
-                <input type="hidden" name="userId" value="${loggedUser.userId}">
-
                 <div class="form-row">
                     <div class="form-group">
                         <label for="firstName">First Name</label>

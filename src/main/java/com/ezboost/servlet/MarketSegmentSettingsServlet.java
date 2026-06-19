@@ -1,6 +1,7 @@
 package com.ezboost.servlet;
 
 import com.ezboost.dao.MarketSegmentDAO;
+import com.ezboost.dao.AuditEventDAO;
 import com.ezboost.model.MarketSegment;
 import com.ezboost.model.User;
 import com.ezboost.util.OnboardingUtil;
@@ -79,6 +80,7 @@ public class MarketSegmentSettingsServlet extends HttpServlet {
             switch (action) {
                 case "updateSegments":
                     updateSegments(request, userId);
+                    AuditEventDAO.record(userId, "SEGMENT_UPDATE", "MarketSegment", "SUCCESS");
                     request.setAttribute("success", "Market segments updated successfully!");
                     if (OnboardingUtil.STEP_SEGMENTS.equals(OnboardingUtil.getCurrentStep(user))) {
                         OnboardingUtil.completeOnboarding(userId, session);
@@ -89,16 +91,19 @@ public class MarketSegmentSettingsServlet extends HttpServlet {
 
                 case "addSegment":
                     addSegment(request, userId);
+                    AuditEventDAO.record(userId, "SEGMENT_CREATE", "MarketSegment", "SUCCESS");
                     request.setAttribute("success", "New segment added successfully!");
                     break;
 
                 case "deleteSegment":
                     deleteSegment(request, userId);
+                    AuditEventDAO.record(userId, "SEGMENT_DELETE", "MarketSegment", "SUCCESS");
                     request.setAttribute("success", "Segment deleted successfully!");
                     break;
 
                 case "resetDefaults":
                     resetToDefaults(userId);
+                    AuditEventDAO.record(userId, "SEGMENT_RESET", "MarketSegment", "SUCCESS");
                     request.setAttribute("success", "Segments reset to default values!");
                     break;
 
@@ -106,7 +111,8 @@ public class MarketSegmentSettingsServlet extends HttpServlet {
                     request.setAttribute("error", "Unknown action: " + action);
             }
         } catch (Exception e) {
-            request.setAttribute("error", "Error: " + e.getMessage());
+            request.setAttribute("error", e instanceof IllegalArgumentException
+                    ? e.getMessage() : "Market segments could not be updated. Please try again.");
             logger.error("Failed to update market segment settings for user {}", userId, e);
         }
 

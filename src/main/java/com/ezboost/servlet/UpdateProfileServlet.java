@@ -1,6 +1,7 @@
 package com.ezboost.servlet;
 
 import com.ezboost.dao.UserDAO;
+import com.ezboost.dao.AuditEventDAO;
 import com.ezboost.model.User;
 import com.ezboost.util.UserValidationUtil;
 import jakarta.servlet.ServletException;
@@ -71,6 +72,7 @@ public class UpdateProfileServlet extends HttpServlet {
 
         if (success) {
             session.setAttribute("user", UserDAO.getUserById(loggedUser.getUserId()));
+            AuditEventDAO.record(loggedUser.getUserId(), "PROFILE_UPDATE", "User", "SUCCESS");
             session.setAttribute("profileSuccess", "Profile updated successfully.");
             session.removeAttribute("profileFormData");
         } else {
