@@ -3,6 +3,7 @@ package com.ezboost.servlet;
 import com.ezboost.dao.UserDAO;
 import com.ezboost.model.User;
 import com.ezboost.util.UserValidationUtil;
+import com.ezboost.util.LoginAttemptTracker;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,9 +25,17 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
+        if (LoginAttemptTracker.isBlocked(email, request.getRemoteAddr())) {
+            request.setAttribute("error", "Too many failed login attempts. Please try again later.");
+            request.setAttribute("email", email);
+            request.getRequestDispatcher("login.jsp").forward(request, response);
+            return;
+        }
+
         User user = UserDAO.loginUser(email, password);
 
         if (user != null) {
+            LoginAttemptTracker.clear(email, request.getRemoteAddr());
             HttpSession oldSession = request.getSession(false);
             if (oldSession != null) {
                 oldSession.invalidate();
@@ -38,6 +47,7 @@ public class LoginServlet extends HttpServlet {
 
             response.sendRedirect("homepage.jsp");
         } else {
+            LoginAttemptTracker.recordFailure(email, request.getRemoteAddr());
             request.setAttribute("error", "Wrong email or password. Please try again.");
             request.setAttribute("email", email);
             request.getRequestDispatcher("login.jsp").forward(request, response);
