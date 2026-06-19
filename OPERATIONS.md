@@ -2,6 +2,8 @@
 
 EzBoost remains a Java 11 / Jakarta EE 10 WAR deployed through NetBeans 27 to the existing GlassFish server and Apache Derby network server.
 
+`start-ezboost-stack.bat` and `stop-ezboost-stack.bat` now require `DERBY_BIN` and `GF_BIN` from the environment rather than embedding a personal machine path. Copy `ezboost-stack.example.cmd` to a local untracked configuration script or set the values in the terminal before running either command.
+
 ## GlassFish configuration
 
 Do not add credentials to `DBConnection.java`, batch files, or source control. Set the following Java system properties in the GlassFish domain before deploying. The `.env.example` file documents the required values.

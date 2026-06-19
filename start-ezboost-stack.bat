@@ -1,11 +1,25 @@
 @echo off
 setlocal
 
-set "DERBY_BIN=C:\Derby\bin"
-set "GF_BIN=C:\Seksyen7\glassfish\bin"
-set "DOMAIN=domain1"
-set "DERBY_URL=jdbc:derby://localhost:1527/ezboost_db;user=app;password=app"
-set "DERBY_DB_HOME=C:\Derby\bin\ezboost_db"
+if "%DERBY_BIN%"=="" (
+    echo Error: DERBY_BIN is not configured. Set it to your Derby bin directory.
+    exit /b 1
+)
+if "%GF_BIN%"=="" (
+    echo Error: GF_BIN is not configured. Set it to your GlassFish bin directory.
+    exit /b 1
+)
+if "%EZBOOST_DB_USER%"=="" (
+    echo Error: EZBOOST_DB_USER is not configured.
+    exit /b 1
+)
+if "%EZBOOST_DB_PASSWORD%"=="" (
+    echo Error: EZBOOST_DB_PASSWORD is not configured.
+    exit /b 1
+)
+if "%DOMAIN%"=="" set "DOMAIN=domain1"
+if "%EZBOOST_DB_URL%"=="" set "EZBOOST_DB_URL=jdbc:derby://localhost:1527/ezboost_db"
+set "DERBY_URL=%EZBOOST_DB_URL%;user=%EZBOOST_DB_USER%;password=%EZBOOST_DB_PASSWORD%"
 
 if not exist "%DERBY_BIN%\startNetworkServer.bat" (
     echo Error: Derby start script not found at "%DERBY_BIN%\startNetworkServer.bat"
@@ -42,16 +56,14 @@ if not errorlevel 1 (
         call :check_db >nul 2>&1
         if errorlevel 1 (
             echo [1/2] Derby started, but ezboost_db is still unavailable.
-            echo        Expected database home: "%DERBY_DB_HOME%"
-            echo        JDBC URL: %DERBY_URL%
+            echo        JDBC URL: %EZBOOST_DB_URL%
             exit /b 1
         )
         echo [1/2] Derby Network Server is running and ezboost_db is reachable.
     ) else (
         echo [1/2] Derby is already listening on port 1527, but ezboost_db is not reachable.
         echo        Another Derby instance may be using a different derby.system.home.
-        echo        Expected database home: "%DERBY_DB_HOME%"
-        echo        JDBC URL: %DERBY_URL%
+        echo        JDBC URL: %EZBOOST_DB_URL%
         echo        Stop the other Derby server, then run this script again.
         exit /b 1
     )

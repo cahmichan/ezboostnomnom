@@ -1,9 +1,15 @@
 @echo off
 setlocal
 
-set "DERBY_BIN=C:\Derby\bin"
-set "GF_BIN=C:\Seksyen7\glassfish\bin"
-set "DOMAIN=domain1"
+if "%DERBY_BIN%"=="" (
+    echo Error: DERBY_BIN is not configured. Set it to your Derby bin directory.
+    exit /b 1
+)
+if "%GF_BIN%"=="" (
+    echo Error: GF_BIN is not configured. Set it to your GlassFish bin directory.
+    exit /b 1
+)
+if "%DOMAIN%"=="" set "DOMAIN=domain1"
 
 echo Stopping EzBoost services...
 echo.
