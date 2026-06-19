@@ -31,6 +31,7 @@ public class DataImportServlet extends HttpServlet {
     private static final Logger logger = LoggerFactory.getLogger(DataImportServlet.class);
     private static final String MONTHLY_PREVIEW_SESSION_KEY = "pendingMonthlyImportPreview";
     private static final String ROOM_PREVIEW_SESSION_KEY = "pendingRoomImportPreview";
+    private static final long MAX_UPLOAD_BYTES = 10L * 1024L * 1024L;
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -150,6 +151,7 @@ public class DataImportServlet extends HttpServlet {
             request.setAttribute("error", "Please select a monthly data file to preview.");
             return;
         }
+        validateCsvUpload(filePart, "monthly data");
 
         String fileName = getFileName(filePart);
         boolean replaceExisting = !"append".equals(request.getParameter("monthlyImportMode"));
@@ -196,6 +198,7 @@ public class DataImportServlet extends HttpServlet {
             request.setAttribute("error", "Please select a room data file to preview.");
             return;
         }
+        validateCsvUpload(filePart, "room data");
 
         String fileName = getFileName(filePart);
         boolean replaceExisting = !"append".equals(request.getParameter("roomImportMode"));
@@ -236,6 +239,7 @@ public class DataImportServlet extends HttpServlet {
             request.setAttribute("error", "Please select a monthly data file to upload.");
             return;
         }
+        validateCsvUpload(filePart, "monthly data");
 
         String fileName = getFileName(filePart);
         boolean replaceExisting = !"append".equals(request.getParameter("monthlyImportMode"));
@@ -285,6 +289,7 @@ public class DataImportServlet extends HttpServlet {
             request.setAttribute("error", "Please select a room data file to upload.");
             return;
         }
+        validateCsvUpload(filePart, "room data");
 
         String fileName = getFileName(filePart);
         boolean replaceExisting = !"append".equals(request.getParameter("roomImportMode"));
@@ -503,6 +508,25 @@ public class DataImportServlet extends HttpServlet {
             }
         }
         return "unknown";
+    }
+
+    private void validateCsvUpload(Part filePart, String label) {
+        String fileName = getFileName(filePart);
+        if (filePart.getSize() > MAX_UPLOAD_BYTES) {
+            throw new IllegalArgumentException("The " + label + " file exceeds the 10 MB upload limit.");
+        }
+        if (fileName == null || !fileName.toLowerCase(java.util.Locale.ROOT).endsWith(".csv")) {
+            throw new IllegalArgumentException("Upload a CSV file for " + label + ".");
+        }
+        String contentType = filePart.getContentType();
+        if (contentType != null && !contentType.trim().isEmpty()) {
+            String normalized = contentType.toLowerCase(java.util.Locale.ROOT).split(";", 2)[0].trim();
+            if (!"text/csv".equals(normalized) && !"application/csv".equals(normalized)
+                    && !"application/vnd.ms-excel".equals(normalized)
+                    && !"application/octet-stream".equals(normalized)) {
+                throw new IllegalArgumentException("The selected " + label + " file is not a CSV upload.");
+            }
+        }
     }
 
     public static final class MonthlyImportPreview {
