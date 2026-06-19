@@ -50,6 +50,8 @@ class DatabaseMigrationTest {
                         "INSERT INTO ActualRoomData (UserID, RoomType, MinADR) VALUES (1, 'Deluxe', 250.0)"));
                 assertThrows(java.sql.SQLException.class, () -> statement.executeUpdate(
                         "INSERT INTO MonthlySeasonData (UserID, MonthYear) VALUES (1, '2024-01')"));
+                assertThrows(java.sql.SQLException.class, () -> statement.executeUpdate(
+                        "INSERT INTO MonthlySeasonData (DataID, UserID, MonthYear) VALUES (2, 999, '2024-02')"));
             }
         }
     }
