@@ -112,6 +112,14 @@ public class GeneticAlgorithm {
         return randomSeed;
     }
 
+    /** Testable seeded variant that uses default multipliers and no database state. */
+    public GeneticAlgorithm(double expectedRevenue, List<Room> rooms, DemandCurve demandCurve, long randomSeed) {
+        this(expectedRevenue, rooms);
+        this.demandCurve = demandCurve;
+        this.random.setSeed(randomSeed);
+        this.randomSeed = randomSeed;
+    }
+
     /**
      * Load user multipliers from database
      */
