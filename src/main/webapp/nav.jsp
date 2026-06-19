@@ -58,6 +58,27 @@
         </div>
     </div>
     <div class="nav-right">
-        <a href="LogoutServlet" class="btn-logout">Logout</a>
+        <form action="LogoutServlet" method="post" class="logout-form">
+            <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
+            <button type="submit" class="btn-logout">Logout</button>
+        </form>
     </div>
 </nav>
+<script>
+    (function () {
+        var csrfToken = '${sessionScope.csrfToken}';
+        window.ezBoostCsrfToken = csrfToken;
+
+        document.addEventListener('submit', function (event) {
+            var form = event.target;
+            if (!form || String(form.method).toLowerCase() !== 'post' || form.querySelector('input[name="csrfToken"]')) {
+                return;
+            }
+            var token = document.createElement('input');
+            token.type = 'hidden';
+            token.name = 'csrfToken';
+            token.value = csrfToken;
+            form.appendChild(token);
+        }, true);
+    }());
+</script>

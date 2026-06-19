@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.List;
 
 public final class DatabaseMigration {
@@ -26,14 +27,64 @@ public final class DatabaseMigration {
         }
 
         try (Connection conn = dataSource.getConnection()) {
-            ensureUserOnboardingColumns(conn);
-            ensureFutureEventTables(conn);
-            ensureActualRoomDataColumns(conn);
-            ensureMarketSegmentUserScopedConstraint(conn);
+            ensureMigrationHistory(conn);
+            applyCurrentSchemaMigration(conn);
             migrated = true;
             logger.info("Database schema check complete");
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to run database migrations", e);
+        }
+    }
+
+    /**
+     * Records the transition from legacy, hand-created Derby schemas to a
+     * repeatable application migration history. Future changes must be added
+     * as a new migration rather than changing an already recorded migration.
+     */
+    private static void applyCurrentSchemaMigration(Connection conn) throws SQLException {
+        final String version = "001";
+        if (migrationApplied(conn, version)) {
+            return;
+        }
+
+        ensureUserOnboardingColumns(conn);
+        ensureFutureEventTables(conn);
+        ensureActualRoomDataColumns(conn);
+        ensureMarketSegmentUserScopedConstraint(conn);
+        recordMigration(conn, version, "baseline ownership and onboarding hardening");
+        logger.info("Applied EzBoost schema migration {}", version);
+    }
+
+    private static void ensureMigrationHistory(Connection conn) throws SQLException {
+        if (tableExists(conn.getMetaData(), "EZBOOST_SCHEMA_HISTORY")) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("CREATE TABLE EzBoost_Schema_History (" +
+                    "version VARCHAR(32) PRIMARY KEY, " +
+                    "description VARCHAR(255) NOT NULL, " +
+                    "applied_at TIMESTAMP NOT NULL)");
+        }
+        logger.info("Created EzBoost schema migration history");
+    }
+
+    private static boolean migrationApplied(Connection conn, String version) throws SQLException {
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "SELECT 1 FROM EzBoost_Schema_History WHERE version = ?")) {
+            stmt.setString(1, version);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private static void recordMigration(Connection conn, String version, String description) throws SQLException {
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "INSERT INTO EzBoost_Schema_History (version, description, applied_at) VALUES (?, ?, ?)") ) {
+            stmt.setString(1, version);
+            stmt.setString(2, description);
+            stmt.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+            stmt.executeUpdate();
         }
     }
 

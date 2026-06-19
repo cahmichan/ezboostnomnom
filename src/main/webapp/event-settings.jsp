@@ -78,7 +78,8 @@
                         <div class="api-row">
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label>API Key (get free key at calendarific.com)</label>
-                                <input type="text" name="apiKey" class="form-control" value="${apiKey}" placeholder="Enter your Calendarific API key...">
+                                <input type="password" name="apiKey" class="form-control" value="" autocomplete="new-password"
+                                       placeholder="${apiKeyConfigured ? 'A key is configured. Enter a new key to replace it.' : 'Enter your Calendarific API key...'}">
                             </div>
                             <button type="submit" class="btn-primary-modern" style="height: fit-content;">
                                 <i class="bi bi-save"></i> Save Key
@@ -407,7 +408,7 @@
 
             fetch('EventSettings', {
                 method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': window.ezBoostCsrfToken },
                 body: params
             })
                 .then(function(resp) {
@@ -440,7 +441,7 @@
 
             fetch('EventSettings', {
                 method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': window.ezBoostCsrfToken },
                 body: params
             })
                 .then(function(resp) {

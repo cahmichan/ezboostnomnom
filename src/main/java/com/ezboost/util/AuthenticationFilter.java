@@ -48,6 +48,7 @@ public class AuthenticationFilter implements Filter {
             || path.equals("/LoginServlet")
             || path.equals("/RegisterServlet")
             || path.equals("/LogoutServlet")
+            || path.equals("/health")
             || path.startsWith("/css/")
             || path.startsWith("/js/")
             || path.startsWith("/images/");

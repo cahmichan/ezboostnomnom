@@ -87,7 +87,7 @@ public class DataImportServlet extends HttpServlet {
                     commitMonthlyPreview(request, session, userId);
                     break;
                 case "previewRooms":
-                    previewRoomImport(request, session);
+                    previewRoomImport(request, session, userId);
                     break;
                 case "commitRoomImport":
                     commitRoomPreview(request, session, userId);
@@ -101,12 +101,8 @@ public class DataImportServlet extends HttpServlet {
                     request.setAttribute("success", "Room import preview cleared.");
                     break;
                 case "importMonthly":
-                    handleMonthlyDataImport(request, userId);
-                    clearPreview(session, MONTHLY_PREVIEW_SESSION_KEY);
-                    break;
                 case "importRooms":
-                    handleRoomDataImport(request, userId);
-                    clearPreview(session, ROOM_PREVIEW_SESSION_KEY);
+                    request.setAttribute("error", "Preview the import before committing it.");
                     break;
                 case "deleteMonthly":
                     handleDeleteMonthly(request, userId);
@@ -168,7 +164,7 @@ public class DataImportServlet extends HttpServlet {
 
         SeasonThreshold threshold = buildThresholdPreview(userId, parseResult.getData());
         boolean gaUsed = parseResult.getData().size() >= 4;
-        MonthlyImportPreview preview = new MonthlyImportPreview(
+        MonthlyImportPreview preview = new MonthlyImportPreview(userId,
                 fileName,
                 replaceExisting,
                 parseResult.getData(),
@@ -184,7 +180,7 @@ public class DataImportServlet extends HttpServlet {
 
     private void commitMonthlyPreview(HttpServletRequest request, HttpSession session, int userId) {
         MonthlyImportPreview preview = (MonthlyImportPreview) session.getAttribute(MONTHLY_PREVIEW_SESSION_KEY);
-        if (preview == null) {
+        if (preview == null || !preview.isValidFor(userId)) {
             request.setAttribute("error", "Your monthly import preview expired. Preview the file again before importing.");
             return;
         }
@@ -193,7 +189,7 @@ public class DataImportServlet extends HttpServlet {
         clearPreview(session, MONTHLY_PREVIEW_SESSION_KEY);
     }
 
-    private void previewRoomImport(HttpServletRequest request, HttpSession session) throws Exception {
+    private void previewRoomImport(HttpServletRequest request, HttpSession session, int userId) throws Exception {
         Part filePart = request.getPart("roomFile");
         if (filePart == null || filePart.getSize() == 0) {
             request.setAttribute("error", "Please select a room data file to preview.");
@@ -217,14 +213,14 @@ public class DataImportServlet extends HttpServlet {
             return;
         }
 
-        RoomImportPreview preview = new RoomImportPreview(fileName, replaceExisting, parseResult);
+        RoomImportPreview preview = new RoomImportPreview(userId, fileName, replaceExisting, parseResult);
         session.setAttribute(ROOM_PREVIEW_SESSION_KEY, preview);
         request.setAttribute("success", "Room data parsed successfully. Review the preview below before importing.");
     }
 
     private void commitRoomPreview(HttpServletRequest request, HttpSession session, int userId) {
         RoomImportPreview preview = (RoomImportPreview) session.getAttribute(ROOM_PREVIEW_SESSION_KEY);
-        if (preview == null) {
+        if (preview == null || !preview.isValidFor(userId)) {
             request.setAttribute("error", "Your room import preview expired. Preview the file again before importing.");
             return;
         }
@@ -254,7 +250,7 @@ public class DataImportServlet extends HttpServlet {
             return;
         }
 
-        MonthlyImportPreview preview = new MonthlyImportPreview(
+        MonthlyImportPreview preview = new MonthlyImportPreview(userId,
                 fileName,
                 replaceExisting,
                 parseResult.getData(),
@@ -267,13 +263,8 @@ public class DataImportServlet extends HttpServlet {
     }
 
     private void saveMonthlyData(MonthlyImportPreview preview, HttpServletRequest request, int userId) {
-        if (preview.isReplaceExisting()) {
-            SeasonalityDAO.deleteAllUserMonthlyData(userId);
-            SeasonalityDAO.deleteThresholds(userId);
-        }
-
-        SeasonalityDAO.saveThresholds(preview.getThreshold());
-        int savedCount = SeasonalityDAO.batchSaveMonthlyData(preview.getImportedData());
+        int savedCount = SeasonalityDAO.saveImportedMonthlyData(userId, preview.getImportedData(),
+                preview.getThreshold(), preview.isReplaceExisting());
 
         request.setAttribute("thresholds", preview.getThreshold());
         request.setAttribute("gaUsed", preview.isGaUsed());
@@ -311,7 +302,7 @@ public class DataImportServlet extends HttpServlet {
             return;
         }
 
-        saveRoomData(new RoomImportPreview(fileName, replaceExisting, parseResult), request, userId);
+        saveRoomData(new RoomImportPreview(userId, fileName, replaceExisting, parseResult), request, userId);
     }
 
     private void saveRoomData(RoomImportPreview preview, HttpServletRequest request, int userId) {
@@ -355,7 +346,10 @@ public class DataImportServlet extends HttpServlet {
         String dataIdStr = request.getParameter("dataId");
         if (dataIdStr != null && !dataIdStr.isEmpty()) {
             int dataId = Integer.parseInt(dataIdStr);
-            SeasonalityDAO.deleteMonthlyDataById(dataId);
+            if (!SeasonalityDAO.deleteMonthlyDataById(dataId, userId)) {
+                request.setAttribute("error", "Monthly record was not found for your account.");
+                return;
+            }
             request.setAttribute("success", "Monthly record deleted.");
         } else {
             SeasonalityDAO.deleteAllUserMonthlyData(userId);
@@ -509,6 +503,9 @@ public class DataImportServlet extends HttpServlet {
     }
 
     public static final class MonthlyImportPreview {
+        private static final long EXPIRY_MILLIS = 30L * 60L * 1000L;
+        private final int userId;
+        private final long createdAt;
         private final String fileName;
         private final boolean replaceExisting;
         private final List<MonthlySeasonData> importedData;
@@ -517,9 +514,11 @@ public class DataImportServlet extends HttpServlet {
         private final int rejectedRows;
         private final List<String> warnings;
 
-        private MonthlyImportPreview(String fileName, boolean replaceExisting, List<MonthlySeasonData> importedData,
+        private MonthlyImportPreview(int userId, String fileName, boolean replaceExisting, List<MonthlySeasonData> importedData,
                                      SeasonThreshold threshold, boolean gaUsed, int rejectedRows,
                                      List<String> warnings) {
+            this.userId = userId;
+            this.createdAt = System.currentTimeMillis();
             this.fileName = fileName;
             this.replaceExisting = replaceExisting;
             this.importedData = new ArrayList<>(importedData);
@@ -560,14 +559,23 @@ public class DataImportServlet extends HttpServlet {
         public List<String> getWarnings() {
             return warnings;
         }
+
+        public boolean isValidFor(int currentUserId) {
+            return userId == currentUserId && System.currentTimeMillis() - createdAt <= EXPIRY_MILLIS;
+        }
     }
 
     public static final class RoomImportPreview {
+        private static final long EXPIRY_MILLIS = 30L * 60L * 1000L;
+        private final int userId;
+        private final long createdAt;
         private final String fileName;
         private final boolean replaceExisting;
         private final RoomDataImportUtil.ParseResult parseResult;
 
-        private RoomImportPreview(String fileName, boolean replaceExisting, RoomDataImportUtil.ParseResult parseResult) {
+        private RoomImportPreview(int userId, String fileName, boolean replaceExisting, RoomDataImportUtil.ParseResult parseResult) {
+            this.userId = userId;
+            this.createdAt = System.currentTimeMillis();
             this.fileName = fileName;
             this.replaceExisting = replaceExisting;
             this.parseResult = parseResult;
@@ -583,6 +591,10 @@ public class DataImportServlet extends HttpServlet {
 
         public RoomDataImportUtil.ParseResult getParseResult() {
             return parseResult;
+        }
+
+        public boolean isValidFor(int currentUserId) {
+            return userId == currentUserId && System.currentTimeMillis() - createdAt <= EXPIRY_MILLIS;
         }
     }
 }

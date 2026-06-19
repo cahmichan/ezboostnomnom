@@ -7,6 +7,19 @@
 
     <!-- ==================== Filters ==================== -->
 
+    <listener>
+        <listener-class>com.ezboost.util.ApplicationLifecycleListener</listener-class>
+    </listener>
+
+    <filter>
+        <filter-name>RequestSecurityFilter</filter-name>
+        <filter-class>com.ezboost.util.RequestSecurityFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>RequestSecurityFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
     <filter>
         <filter-name>AuthenticationFilter</filter-name>
         <filter-class>com.ezboost.util.AuthenticationFilter</filter-class>
@@ -132,6 +145,22 @@
         <servlet-name>DownloadReportServlet</servlet-name>
         <url-pattern>/DownloadReportServlet</url-pattern>
     </servlet-mapping>
+
+    <servlet>
+        <servlet-name>HealthServlet</servlet-name>
+        <servlet-class>com.ezboost.servlet.HealthServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>HealthServlet</servlet-name>
+        <url-pattern>/health</url-pattern>
+    </servlet-mapping>
+
+    <session-config>
+        <session-timeout>30</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+        </cookie-config>
+    </session-config>
 
     <!-- ==================== Error Pages ==================== -->
 

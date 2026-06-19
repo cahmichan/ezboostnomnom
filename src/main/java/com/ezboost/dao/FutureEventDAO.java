@@ -2,6 +2,7 @@ package com.ezboost.dao;
 
 import com.ezboost.model.FutureEvent;
 import com.ezboost.util.DBConnection;
+import com.ezboost.util.ApiKeyCipher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -327,7 +328,7 @@ public class FutureEventDAO {
             pstmt.setInt(1, userId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rs.getString("setting_value");
+                return ApiKeyCipher.decrypt(rs.getString("setting_value"));
             }
         } catch (SQLException e) {
             logger.error("Error fetching API key", e);
@@ -345,7 +346,7 @@ public class FutureEventDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
 
-            pstmt.setString(1, apiKey);
+            pstmt.setString(1, ApiKeyCipher.encrypt(apiKey));
             pstmt.setInt(2, userId);
             int rows = pstmt.executeUpdate();
 
@@ -354,7 +355,7 @@ public class FutureEventDAO {
                 String insertSql = "INSERT INTO UserApiSettings (user_id, setting_key, setting_value) VALUES (?, 'calendarific_api_key', ?)";
                 try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
                     insertStmt.setInt(1, userId);
-                    insertStmt.setString(2, apiKey);
+                    insertStmt.setString(2, ApiKeyCipher.encrypt(apiKey));
                     insertStmt.executeUpdate();
                 }
             }

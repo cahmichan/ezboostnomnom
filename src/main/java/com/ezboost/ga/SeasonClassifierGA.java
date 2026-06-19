@@ -35,6 +35,7 @@ public class SeasonClassifierGA {
     private static final double MUTATION_STRENGTH = 5.0; // Max change in threshold per mutation
     
     private final Random random = new Random();
+    private Long randomSeed;
     
     // Results
     private double[] bestThresholds; // [T1, T2, T3] where T1 < T2 < T3
@@ -50,6 +51,17 @@ public class SeasonClassifierGA {
         if (occupancyValues.length < 4) {
             throw new IllegalArgumentException("Need at least 4 months of data for season classification");
         }
+    }
+
+    /** Creates a replayable season-classification run for testing and audit. */
+    public SeasonClassifierGA(List<MonthlySeasonData> monthlyData, long randomSeed) {
+        this(monthlyData);
+        this.random.setSeed(randomSeed);
+        this.randomSeed = randomSeed;
+    }
+
+    public Long getRandomSeed() {
+        return randomSeed;
     }
 
     /**

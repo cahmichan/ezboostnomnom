@@ -37,6 +37,7 @@ public class GeneticAlgorithm {
     private final double expectedRevenue;
     private final List<Room> allRooms;
     private final Random random = new Random();
+    private Long randomSeed;
 
     private double naturalRevenue = -1;
     private Map<String, Double> userMultipliers;
@@ -94,6 +95,21 @@ public class GeneticAlgorithm {
             logger.debug("[GeneticAlgorithm] Optimal price point: RM{}",
                          String.format("%.0f", demandCurve.getOptimalPrice()));
         }
+    }
+
+    /**
+     * Creates a reproducible optimization run. The algorithm and constraints
+     * remain unchanged; only the random source is made replayable.
+     */
+    public GeneticAlgorithm(double expectedRevenue, List<Room> rooms, int userId,
+                            DemandCurve demandCurve, long randomSeed) {
+        this(expectedRevenue, rooms, userId, demandCurve);
+        this.random.setSeed(randomSeed);
+        this.randomSeed = randomSeed;
+    }
+
+    public Long getRandomSeed() {
+        return randomSeed;
     }
 
     /**
@@ -229,13 +245,13 @@ public class GeneticAlgorithm {
                 List<Room> parent2 = tournamentSelection(population, 5);
 
                 List<Room> child;
-                if (Math.random() < CROSSOVER_RATE) {
+                if (random.nextDouble() < CROSSOVER_RATE) {
                     child = arithmeticCrossover(parent1, parent2);
                 } else {
                     child = deepCopyChromosome(parent1);
                 }
 
-                if (Math.random() < mutationRate) {
+                if (random.nextDouble() < mutationRate) {
                     scrambleMutation(child);
                 }
 

@@ -38,7 +38,7 @@ public class EventSettingsServlet extends HttpServlet {
         String apiKey = FutureEventDAO.getApiKey(userId);
 
         request.setAttribute("events", events);
-        request.setAttribute("apiKey", apiKey != null ? apiKey : "");
+        request.setAttribute("apiKeyConfigured", apiKey != null && !apiKey.trim().isEmpty());
         request.setAttribute("onboardingActive", OnboardingUtil.isOnboardingActive(user));
         setEventSummaryAttributes(request, events);
 

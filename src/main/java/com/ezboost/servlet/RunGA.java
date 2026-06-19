@@ -103,7 +103,8 @@ public class RunGA extends HttpServlet {
                 demandCurveFallback = true;
             }
 
-            GeneticAlgorithm ga = new GeneticAlgorithm(expectedRevenue, rooms, userId, demandCurve);
+            long randomSeed = new java.security.SecureRandom().nextLong();
+            GeneticAlgorithm ga = new GeneticAlgorithm(expectedRevenue, rooms, userId, demandCurve, randomSeed);
             List<Room> optimizedSolution = ga.runGA();
 
             if (optimizedSolution == null || optimizedSolution.isEmpty()) {
@@ -164,6 +165,7 @@ public class RunGA extends HttpServlet {
             request.setAttribute("priceConstraintStates", priceConstraintStates);
             request.setAttribute("eventAdjustedMonthCount", eventAdjustedMonthCount);
             request.setAttribute("optimizationWarning", persistenceWarning);
+            request.setAttribute("optimizationSeed", randomSeed);
 
             if (monthlyForecast != null) {
                 request.setAttribute("monthlyForecast", monthlyForecast);
@@ -182,6 +184,7 @@ public class RunGA extends HttpServlet {
             session.setAttribute("achievableMaxRevenue", achievableRange[1]);
             session.setAttribute("constraintHighlights", constraintHighlights);
             session.setAttribute("demandCurveMode", demandCurveFallback ? "Fallback default curve" : "Historical fit");
+            session.setAttribute("optimizationSeed", randomSeed);
 
             RequestDispatcher rd = request.getRequestDispatcher("BoostMe.jsp");
             rd.forward(request, response);
