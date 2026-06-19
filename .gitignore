@@ -1,0 +1,32 @@
+# Maven and NetBeans build output
+target/
+build/
+dist/
+nbbuild/
+.nb-gradle/
+
+# NetBeans and IDE-local state
+nbproject/private/
+.idea/
+.claude/
+*.iml
+
+# Local runtime data and logs
+*.log
+derby.log
+nul
+*.pid
+
+# Local configuration and secrets
+.env
+.env.*
+!\.env.example
+*.properties.local
+glassfish-resources.xml
+
+# Source data that must not be published
+Royale Chulan Dataset.xlsx
+
+# Operating-system files
+.DS_Store
+Thumbs.db

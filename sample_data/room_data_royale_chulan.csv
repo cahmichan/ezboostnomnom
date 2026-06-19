@@ -1,0 +1,13 @@
+RoomType,NumberOfRooms,BaseRate,MinRate,MaxRate,AvgOccupancy
+Superior Room,64,155.00,140.00,220.00,81.99
+Deluxe Room,52,165.00,150.00,230.00,81.63
+Studio Hollywood,27,145.00,130.00,200.00,74.76
+Studio Suite,48,155.00,140.00,220.00,76.01
+Premier Room,78,175.00,160.00,240.00,75.76
+Royale Club Room,67,170.00,155.00,240.00,75.30
+1 Bedroom Apartment,20,170.00,150.00,245.00,66.51
+2 Bedroom Apartment,5,290.00,260.00,390.00,54.64
+2 Bedroom Executive,3,360.00,320.00,490.00,39.78
+Premier Suite,14,180.00,160.00,245.00,81.20
+Executive Suite,23,200.00,180.00,270.00,59.12
+Royale Suite,1,400.00,360.00,600.00,2.92

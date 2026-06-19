@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+                             https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
+         version="5.0">
+
+    <!-- ==================== Filters ==================== -->
+
+    <filter>
+        <filter-name>AuthenticationFilter</filter-name>
+        <filter-class>com.ezboost.util.AuthenticationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthenticationFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- ==================== Servlets ==================== -->
+
+    <!-- Login Servlet -->
+    <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>com.ezboost.servlet.LoginServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/LoginServlet</url-pattern>
+    </servlet-mapping>
+
+    <!-- Register Servlet -->
+    <servlet>
+        <servlet-name>RegisterServlet</servlet-name>
+        <servlet-class>com.ezboost.servlet.RegisterServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RegisterServlet</servlet-name>
+        <url-pattern>/RegisterServlet</url-pattern>
+    </servlet-mapping>
+
+    <!-- Logout Servlet -->
+    <servlet>
+        <servlet-name>LogoutServlet</servlet-name>
+        <servlet-class>com.ezboost.servlet.LogoutServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LogoutServlet</servlet-name>
+        <url-pattern>/LogoutServlet</url-pattern>
+    </servlet-mapping>
+
+    <!-- RunGA Servlet - Price Optimization -->
+    <servlet>
+        <servlet-name>RunGA</servlet-name>
+        <servlet-class>com.ezboost.servlet.RunGA</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RunGA</servlet-name>
+        <url-pattern>/RunGA</url-pattern>
+    </servlet-mapping>
+
+    <!-- Update Profile Servlet -->
+    <servlet>
+        <servlet-name>UpdateProfileServlet</servlet-name>
+        <servlet-class>com.ezboost.servlet.UpdateProfileServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>UpdateProfileServlet</servlet-name>
+        <url-pattern>/UpdateProfileServlet</url-pattern>
+    </servlet-mapping>
+
+    <!-- Data Import Servlet -->
+    <servlet>
+        <servlet-name>DataImportServlet</servlet-name>
+        <servlet-class>com.ezboost.servlet.DataImportServlet</servlet-class>
+        <multipart-config>
+            <max-file-size>10485760</max-file-size>
+            <max-request-size>15728640</max-request-size>
+            <file-size-threshold>1048576</file-size-threshold>
+        </multipart-config>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DataImportServlet</servlet-name>
+        <url-pattern>/DataImport</url-pattern>
+    </servlet-mapping>
+
+    <!-- Market Segment Settings Servlet -->
+    <servlet>
+        <servlet-name>SegmentSettings</servlet-name>
+        <servlet-class>com.ezboost.servlet.MarketSegmentSettingsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>SegmentSettings</servlet-name>
+        <url-pattern>/SegmentSettings</url-pattern>
+    </servlet-mapping>
+
+    <!-- Multiplier Settings Servlet -->
+    <servlet>
+        <servlet-name>MultiplierSettingsServlet</servlet-name>
+        <servlet-class>com.ezboost.servlet.MultiplierSettingsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>MultiplierSettingsServlet</servlet-name>
+        <url-pattern>/MultiplierSettings</url-pattern>
+    </servlet-mapping>
+
+    <!-- Event Settings Servlet -->
+    <servlet>
+        <servlet-name>EventSettingsServlet</servlet-name>
+        <servlet-class>com.ezboost.servlet.EventSettingsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>EventSettingsServlet</servlet-name>
+        <url-pattern>/EventSettings</url-pattern>
+    </servlet-mapping>
+
+    <!-- Profile Servlet -->
+    <servlet>
+        <servlet-name>ProfileServlet</servlet-name>
+        <servlet-class>com.ezboost.servlet.ProfileServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProfileServlet</servlet-name>
+        <url-pattern>/Profile</url-pattern>
+    </servlet-mapping>
+
+    <!-- Download Report Servlet -->
+    <servlet>
+        <servlet-name>DownloadReportServlet</servlet-name>
+        <servlet-class>com.ezboost.servlet.DownloadReportServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DownloadReportServlet</servlet-name>
+        <url-pattern>/DownloadReportServlet</url-pattern>
+    </servlet-mapping>
+
+    <!-- ==================== Error Pages ==================== -->
+
+    <error-page>
+        <error-code>404</error-code>
+        <location>/error-404.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/error-500.jsp</location>
+    </error-page>
+
+    <!-- ==================== Welcome File ==================== -->
+
+    <welcome-file-list>
+        <welcome-file>login.jsp</welcome-file>
+    </welcome-file-list>
+
+</web-app>
