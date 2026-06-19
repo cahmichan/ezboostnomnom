@@ -359,7 +359,7 @@ public class SeasonalityDAO {
      */
     public static boolean reclassifyAllSeasons(int userId, SeasonThreshold thresholds) {
         List<MonthlySeasonData> dataList = getMonthlyDataByUser(userId);
-        String sql = "UPDATE MonthlySeasonData SET ClassifiedSeason = ? WHERE DataID = ?";
+        String sql = "UPDATE MonthlySeasonData SET ClassifiedSeason = ? WHERE DataID = ? AND UserID = ?";
 
         Connection conn = null;
         try {
@@ -370,6 +370,7 @@ public class SeasonalityDAO {
                     String newSeason = thresholds.classifyOccupancy(data.getOccupancyRate());
                     pstmt.setString(1, newSeason);
                     pstmt.setInt(2, data.getDataId());
+                    pstmt.setInt(3, userId);
                     pstmt.addBatch();
                 }
                 pstmt.executeBatch();

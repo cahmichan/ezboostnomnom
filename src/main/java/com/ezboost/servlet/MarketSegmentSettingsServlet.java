@@ -132,16 +132,14 @@ public class MarketSegmentSettingsServlet extends HttpServlet {
             // Get multiplier
             String multParam = request.getParameter("multiplier_" + code);
             if (multParam != null && !multParam.isEmpty()) {
-                double multiplier = Double.parseDouble(multParam);
-                // Validate range 0.5 to 2.0
-                multiplier = Math.max(0.5, Math.min(2.0, multiplier));
+                double multiplier = parseMultiplier(multParam);
                 segment.setRateMultiplier(multiplier);
             }
 
             // Get description
             String descParam = request.getParameter("desc_" + code);
             if (descParam != null) {
-                segment.setDescription(descParam);
+                segment.setDescription(validateDescription(descParam));
             }
 
             // Save (userId is already set on the segment from getAllSegments)
@@ -156,7 +154,7 @@ public class MarketSegmentSettingsServlet extends HttpServlet {
         String name = request.getParameter("newName");
         String code = request.getParameter("newCode");
         String category = request.getParameter("newCategory");
-        double multiplier = Double.parseDouble(request.getParameter("newMultiplier"));
+        double multiplier = parseMultiplier(request.getParameter("newMultiplier"));
         String description = request.getParameter("newDescription");
 
         // Validate
@@ -167,8 +165,18 @@ public class MarketSegmentSettingsServlet extends HttpServlet {
             throw new IllegalArgumentException("Segment code is required");
         }
 
+        if (name.trim().length() > 100) {
+            throw new IllegalArgumentException("Segment name must not exceed 100 characters");
+        }
+
         // Check if code already exists for this user
-        String normalizedCode = code.toUpperCase().trim();
+        String normalizedCode = code.toUpperCase(java.util.Locale.ROOT).trim();
+        if (!normalizedCode.matches("[A-Z0-9_-]{1,10}")) {
+            throw new IllegalArgumentException("Segment code must contain only letters, numbers, hyphens, or underscores.");
+        }
+        if (!"FIT".equals(category) && !"GIT".equals(category)) {
+            throw new IllegalArgumentException("Segment category must be FIT or GIT.");
+        }
         MarketSegment existing = MarketSegmentDAO.getSegmentByCode(normalizedCode, userId);
         if (existing != null) {
             throw new IllegalArgumentException("Segment code '" + code + "' already exists");
@@ -180,13 +188,33 @@ public class MarketSegmentSettingsServlet extends HttpServlet {
         segment.setSegmentName(name.trim());
         segment.setSegmentCode(normalizedCode);
         segment.setCategory(category);
-        segment.setRateMultiplier(Math.max(0.5, Math.min(2.0, multiplier)));
-        segment.setDescription(description);
+        segment.setRateMultiplier(multiplier);
+        segment.setDescription(validateDescription(description));
         segment.setActive(true);
 
         if (!MarketSegmentDAO.saveSegment(segment)) {
             throw new IllegalStateException("Segment could not be saved. The segment code may already exist in the database.");
         }
+    }
+
+    private double parseMultiplier(String value) {
+        try {
+            double multiplier = Double.parseDouble(value);
+            if (!Double.isFinite(multiplier) || multiplier < 0.5 || multiplier > 2.0) {
+                throw new IllegalArgumentException("Rate multiplier must be between 0.5 and 2.0.");
+            }
+            return multiplier;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Rate multiplier must be a valid number.");
+        }
+    }
+
+    private String validateDescription(String description) {
+        String normalized = description == null ? "" : description.trim();
+        if (normalized.length() > 500) {
+            throw new IllegalArgumentException("Segment description must not exceed 500 characters.");
+        }
+        return normalized;
     }
 
     /**

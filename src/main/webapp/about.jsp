@@ -113,7 +113,7 @@
         <section class="cta-section">
             <h3>Ready to Optimize Your Revenue?</h3>
             <p>Experience the power of AI-driven pricing optimization for your hotel</p>
-            <a href="BoostMe.jsp" class="cta-button">Start Your Journey</a>
+            <a href="BoostMe" class="cta-button">Start Your Journey</a>
         </section>
     </div>
 

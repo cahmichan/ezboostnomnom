@@ -56,7 +56,7 @@ public class RunGA extends HttpServlet {
             }
 
             double expectedRevenue = Double.parseDouble(revenueStr);
-            if (expectedRevenue <= 0) {
+            if (!Double.isFinite(expectedRevenue) || expectedRevenue <= 0) {
                 forwardError(request, response, "Revenue target must be greater than zero.");
                 return;
             }

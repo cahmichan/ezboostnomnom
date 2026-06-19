@@ -14,7 +14,7 @@
         homepageReady = RoomDataDAO.hasRoomData(loggedInUser.getUserId())
                 && !SeasonalityDAO.getMonthlyDataByUser(loggedInUser.getUserId()).isEmpty()
                 && SeasonalityDAO.getThresholdsByUser(loggedInUser.getUserId()) != null;
-        homepageNextLink = homepageReady ? "BoostMe.jsp" : "DataImport";
+        homepageNextLink = homepageReady ? "BoostMe" : "DataImport";
         homepageNextLabel = homepageReady ? "Start Optimizing" : "Import Your Data";
     }
     request.setAttribute("loggedInUser", loggedInUser);

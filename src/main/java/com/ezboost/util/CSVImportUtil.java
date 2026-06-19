@@ -74,12 +74,13 @@ public class CSVImportUtil {
                         logger.error("Skipping monthly row {} because month fields are missing: {}", lineNumber, line);
                         continue;
                     }
-                    if (data.getOccupancyRate() < 0 || data.getOccupancyRate() > 100) {
+                    if (!Double.isFinite(data.getOccupancyRate()) || data.getOccupancyRate() < 0 || data.getOccupancyRate() > 100) {
                         rejectedRows++;
                         logger.error("Skipping monthly row {} because occupancy is out of range: {}", lineNumber, line);
                         continue;
                     }
-                    if (data.getTotalRevenue() < 0 || data.getAvgRoomRate() < 0) {
+                    if (!Double.isFinite(data.getTotalRevenue()) || !Double.isFinite(data.getAvgRoomRate())
+                            || data.getTotalRevenue() < 0 || data.getAvgRoomRate() < 0) {
                         rejectedRows++;
                         logger.error("Skipping monthly row {} because revenue or ADR is negative: {}", lineNumber, line);
                         continue;
@@ -244,7 +245,7 @@ public class CSVImportUtil {
         Cell occCell = row.getCell(occCol);
         if (occCell == null) return null;
         double occupancy = getCellNumericValue(occCell);
-        if (occupancy <= 0 || occupancy > 100) return null;
+        if (!Double.isFinite(occupancy) || occupancy <= 0 || occupancy > 100) return null;
 
         // Get revenue
         Cell revCell = row.getCell(revCol);
@@ -253,6 +254,7 @@ public class CSVImportUtil {
         // Get ADR
         Cell adrCell = adrCol >= 0 ? row.getCell(adrCol) : null;
         double adr = adrCell != null ? getCellNumericValue(adrCell) : 0;
+        if (!Double.isFinite(revenue) || !Double.isFinite(adr) || revenue < 0 || adr < 0) return null;
 
         MonthlySeasonData data = new MonthlySeasonData();
         data.setUserId(userId);

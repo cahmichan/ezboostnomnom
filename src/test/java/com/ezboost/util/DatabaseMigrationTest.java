@@ -28,7 +28,7 @@ class DatabaseMigrationTest {
             try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
                 try (ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM EzBoost_Schema_History")) {
                     rs.next();
-                    assertEquals(5, rs.getInt(1));
+                    assertEquals(6, rs.getInt(1));
                 }
                 DatabaseMetaData metadata = connection.getMetaData();
                 int operationalTableCount = 0;

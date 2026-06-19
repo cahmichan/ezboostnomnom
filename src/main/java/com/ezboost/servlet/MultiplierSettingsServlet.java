@@ -185,14 +185,8 @@ public class MultiplierSettingsServlet extends HttpServlet {
                 try {
                     double multiplier = Double.parseDouble(value);
 
-                    // Validate bounds (0.5 to 2.0)
-                    if (multiplier < 0.5) {
-                        multiplier = 0.5;
-                        logger.debug("[MultiplierSettings] {} clamped to minimum 0.5", season);
-                    }
-                    if (multiplier > 2.0) {
-                        multiplier = 2.0;
-                        logger.debug("[MultiplierSettings] {} clamped to maximum 2.0", season);
+                    if (!Double.isFinite(multiplier) || multiplier < 0.5 || multiplier > 2.0) {
+                        throw new IllegalArgumentException("" + season + " multiplier must be between 0.5 and 2.0.");
                     }
 
                     // Create or update setting
@@ -213,7 +207,7 @@ public class MultiplierSettingsServlet extends HttpServlet {
                     }
 
                 } catch (NumberFormatException e) {
-                    logger.warn("Invalid value for {}: {}", season, value);
+                    throw new IllegalArgumentException(season + " multiplier must be a valid number.");
                 }
             }
         }

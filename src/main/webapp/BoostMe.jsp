@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.*, java.text.DecimalFormat" %>
 <%@ page import="com.ezboost.model.Room, com.ezboost.model.Season, com.ezboost.model.MarketSegment, com.ezboost.model.FutureEvent, com.ezboost.model.User" %>
+<%@ page import="com.ezboost.util.HtmlEscaper" %>
 
 <%
     DecimalFormat moneyFormat = new DecimalFormat("#,##0.00");
@@ -77,13 +78,13 @@
         <% if (error != null && !error.isEmpty()) { %>
         <div class="alert-modern alert-danger" style="margin-bottom: 1.5rem;">
             <i class="bi bi-exclamation-triangle-fill"></i>
-            <span><%= error %></span>
+            <span><%= HtmlEscaper.escape(error) %></span>
         </div>
         <% } %>
         <% if (optimizationWarning != null && !optimizationWarning.isEmpty()) { %>
         <div class="alert-modern alert-warning" style="margin-bottom: 1.5rem;">
             <i class="bi bi-exclamation-circle-fill"></i>
-            <span><%= optimizationWarning %></span>
+            <span><%= HtmlEscaper.escape(optimizationWarning) %></span>
         </div>
         <% } %>
 
@@ -100,7 +101,7 @@
                     <span class="status-dot <%= hasResults ? "active" : "" %>"></span>
                     <div class="status-info">
                         <span class="status-label">Demand Model</span>
-                        <span class="status-value"><%= demandCurveMode != null ? demandCurveMode : "Awaiting run" %></span>
+                        <span class="status-value"><%= HtmlEscaper.escape(demandCurveMode != null ? demandCurveMode : "Awaiting run") %></span>
                     </div>
                 </div>
                 <div class="status-card">
@@ -187,7 +188,7 @@
                 <div class="metric-card">
                     <div class="metric-label">Achievable Range</div>
                     <div class="metric-value">RM <%= moneyFormat.format(achievableMinRevenue != null ? achievableMinRevenue : 0) %> - <br>RM <%= moneyFormat.format(achievableMaxRevenue != null ? achievableMaxRevenue : 0) %></div>
-                    <div class="metric-tag"><%= targetDifficulty != null ? targetDifficulty : "n/a" %></div>
+                    <div class="metric-tag"><%= HtmlEscaper.escape(targetDifficulty != null ? targetDifficulty : "n/a") %></div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-label">Accuracy</div>
@@ -204,15 +205,15 @@
                 <div class="segment-explain-grid">
                     <div class="explain-card">
                         <h4>Demand Curve</h4>
-                        <p><strong><%= demandCurveMode %></strong></p>
-                        <p><%= demandCurveSummary %></p>
+                        <p><strong><%= HtmlEscaper.escape(demandCurveMode) %></strong></p>
+                        <p><%= HtmlEscaper.escape(demandCurveSummary) %></p>
                     </div>
                     <div class="explain-card">
                         <h4>Constraint Highlights</h4>
                         <ul class="explain-list">
                             <% if (constraintHighlights != null) {
                                 for (String highlight : constraintHighlights) { %>
-                            <li><%= highlight %></li>
+                            <li><%= HtmlEscaper.escape(highlight) %></li>
                             <%  }
                                } %>
                         </ul>
@@ -251,7 +252,7 @@
                                     String peakState = priceConstraintStates != null ? priceConstraintStates.get(room.getName() + "|" + Season.PEAK.name()) : null;
                                     String superState = priceConstraintStates != null ? priceConstraintStates.get(room.getName() + "|" + Season.SUPER_PEAK.name()) : null;
                                 %>
-                                <td><span class="room-name"><%= room.getName() %></span></td>
+                                <td><span class="room-name"><%= HtmlEscaper.escape(room.getName()) %></span></td>
                                 <td><span class="count-badge"><%= room.getTotalRooms() %></span></td>
                                 <td>RM <%= moneyFormat.format(room.getBaseAdr()) %></td>
                                 <td>RM <%= moneyFormat.format(room.getMinAdr()) %></td>
@@ -317,8 +318,8 @@
                                                segment.getRateMultiplier() < 1.0 ? "discount" : "neutral";
                         %>
                         <span class="segment-badge <%= badgeClass %>"
-                              title="<%= segment.getDescription() != null ? segment.getDescription() : segment.getSegmentName() %>">
-                            <%= segment.getSegmentCode() %>: <%= String.format("%.2f", segment.getRateMultiplier()) %>x
+                              title="<%= HtmlEscaper.escape(segment.getDescription() != null ? segment.getDescription() : segment.getSegmentName()) %>">
+                            <%= HtmlEscaper.escape(segment.getSegmentCode()) %>: <%= String.format("%.2f", segment.getRateMultiplier()) %>x
                         </span>
                         <% } %>
                     </div>
@@ -332,7 +333,7 @@
                                 <th>Season</th>
                                 <th>Base Price</th>
                                 <% for (MarketSegment segment : marketSegments) { %>
-                                <th><%= segment.getSegmentCode() %></th>
+                                <th><%= HtmlEscaper.escape(segment.getSegmentCode()) %></th>
                                 <% } %>
                             </tr>
                         </thead>
@@ -345,7 +346,7 @@
                             %>
                             <tr>
                                 <% if (firstSeason) { %>
-                                <td rowspan="4" style="vertical-align: middle;"><span class="room-name"><%= room.getName() %></span></td>
+                                <td rowspan="4" style="vertical-align: middle;"><span class="room-name"><%= HtmlEscaper.escape(room.getName()) %></span></td>
                                 <% firstSeason = false; } %>
                                 <td><%= season.name().replace("_", " ") %></td>
                                 <td>RM <%= moneyFormat.format(basePrice) %></td>
@@ -400,7 +401,7 @@
                                 <th>Adjusted Season</th>
                                 <% if (firstRoomPrices != null) {
                                     for (String roomName : firstRoomPrices.keySet()) { %>
-                                <th><%= roomName %></th>
+                                <th><%= HtmlEscaper.escape(roomName) %></th>
                                 <% } } %>
                             </tr>
                         </thead>
@@ -411,11 +412,11 @@
                                 boolean seasonChanged = Boolean.TRUE.equals(monthData.get("seasonChanged"));
                             %>
                             <tr class="<%= seasonChanged ? "row-changed" : "" %>">
-                                <td><strong><%= monthData.get("month") %></strong></td>
+                                <td><strong><%= HtmlEscaper.escape(monthData.get("month")) %></strong></td>
                                 <td>
                                     <% if (events != null && !events.isEmpty()) {
                                         for (FutureEvent event : events) { %>
-                                    <span class="event-tag"><%= event.getEventName() %></span>
+                                    <span class="event-tag"><%= HtmlEscaper.escape(event.getEventName()) %></span>
                                     <% } } else { %>
                                     <span class="no-event">-</span>
                                     <% } %>

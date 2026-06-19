@@ -98,7 +98,7 @@ public class UserSettingsDAO {
      */
     public static boolean updateMultiplierSetting(UserMultiplierSettings setting) {
         String sql = "UPDATE UserMultiplierSettings SET CustomMultiplier=?, MinBound=?, " +
-                     "MaxBound=?, IsLocked=?, LastUpdated=CURRENT_TIMESTAMP WHERE SettingID=?";
+                     "MaxBound=?, IsLocked=?, LastUpdated=CURRENT_TIMESTAMP WHERE SettingID=? AND UserID=?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -108,6 +108,7 @@ public class UserSettingsDAO {
             pstmt.setDouble(3, setting.getMaxBound());
             pstmt.setBoolean(4, setting.isLocked());
             pstmt.setInt(5, setting.getSettingId());
+            pstmt.setInt(6, setting.getUserId());
 
             boolean success = pstmt.executeUpdate() > 0;
             if (success) {
@@ -219,15 +220,16 @@ public class UserSettingsDAO {
     /**
      * Lock/unlock a setting
      */
-    public static boolean toggleLock(int settingId, boolean locked) {
+    public static boolean toggleLock(int settingId, int userId, boolean locked) {
         String sql = "UPDATE UserMultiplierSettings SET IsLocked = ?, LastUpdated = CURRENT_TIMESTAMP " +
-                     "WHERE SettingID = ?";
+                     "WHERE SettingID = ? AND UserID = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setBoolean(1, locked);
             pstmt.setInt(2, settingId);
+            pstmt.setInt(3, userId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             logger.error("Error toggling lock", e);
@@ -238,20 +240,21 @@ public class UserSettingsDAO {
     /**
      * Set lock status (alias for toggleLock)
      */
-    public static boolean setLockStatus(int settingId, boolean locked) {
-        return toggleLock(settingId, locked);
+    public static boolean setLockStatus(int settingId, int userId, boolean locked) {
+        return toggleLock(settingId, userId, locked);
     }
 
     /**
      * Delete a multiplier setting
      */
-    public static boolean deleteSetting(int settingId) {
-        String sql = "DELETE FROM UserMultiplierSettings WHERE SettingID = ?";
+    public static boolean deleteSetting(int settingId, int userId) {
+        String sql = "DELETE FROM UserMultiplierSettings WHERE SettingID = ? AND UserID = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, settingId);
+            pstmt.setInt(2, userId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             logger.error("Error deleting setting", e);

@@ -66,4 +66,17 @@ class RoomDataImportUtilTest {
         assertTrue(result.getPreviewRows().get(0).isTightBounds());
         assertTrue(result.getPreviewRows().get(0).isUnusualOccupancy());
     }
+
+    @Test
+    void rejectsNonFiniteAndOutOfRangeInputs() {
+        String csv = "RoomType,NumberOfRooms,BaseRate,MinRate,MaxRate,AvgOccupancy\n" +
+                "Bad NaN,2,NaN,100,200,75\n" +
+                "Bad Occupancy,2,150,100,200,101\n";
+
+        RoomDataImportUtil.ParseResult result = RoomDataImportUtil.parseRoomDataCSV(
+                new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)));
+
+        assertTrue(result.getRooms().isEmpty());
+        assertEquals(2, result.getRejectedRows());
+    }
 }

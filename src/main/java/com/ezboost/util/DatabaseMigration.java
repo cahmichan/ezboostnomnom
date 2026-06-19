@@ -79,6 +79,13 @@ public final class DatabaseMigration {
             recordMigration(conn, ownershipVersion, "owner foreign keys for user-scoped records");
             logger.info("Applied EzBoost schema migration {}", ownershipVersion);
         }
+
+        final String multiplierOwnershipVersion = "006";
+        if (!migrationApplied(conn, multiplierOwnershipVersion)) {
+            ensureMultiplierOwnershipForeignKey(conn);
+            recordMigration(conn, multiplierOwnershipVersion, "owner foreign key for multiplier settings");
+            logger.info("Applied EzBoost schema migration {}", multiplierOwnershipVersion);
+        }
     }
 
     private static void ensureAuditAndOptimizationMetadataTables(Connection conn) throws SQLException {
@@ -140,6 +147,10 @@ public final class DatabaseMigration {
         addForeignKeyIfSafe(conn, metadata, "AUDITEVENT", "USER_ID", "FK_AUDIT_USER");
         addForeignKeyIfSafe(conn, metadata, "OPTIMIZATIONRUNMETADATA", "USER_ID", "FK_RUN_METADATA_USER");
         addForeignKeyIfSafe(conn, metadata, "OPTIMIZATIONREPORTSNAPSHOT", "USER_ID", "FK_REPORT_SNAPSHOT_USER");
+    }
+
+    private static void ensureMultiplierOwnershipForeignKey(Connection conn) throws SQLException {
+        addForeignKeyIfSafe(conn, conn.getMetaData(), "USERMULTIPLIERSETTINGS", "USERID", "FK_MULTIPLIER_USER");
     }
 
     private static void addForeignKeyIfSafe(Connection conn, DatabaseMetaData metadata, String tableName,

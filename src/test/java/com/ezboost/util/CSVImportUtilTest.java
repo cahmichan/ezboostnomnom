@@ -37,4 +37,17 @@ class CSVImportUtilTest {
         assertTrue(result.getWarnings().stream().anyMatch(w -> w.contains("Fewer than 4 valid month rows")));
         assertTrue(result.getWarnings().stream().anyMatch(w -> w.contains("ADR of 0")));
     }
+
+    @Test
+    void rejectsNonFiniteMonthlyValues() {
+        String csv = "MonthYear,MonthName,OccupancyRate,TotalRevenue,AvgRoomRate\n" +
+                "2024-01,January,NaN,100000,180\n" +
+                "2024-02,February,70,Infinity,180\n";
+
+        CSVImportUtil.ParseResult result = CSVImportUtil.parseCSVResult(
+                new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), 7);
+
+        assertEquals(0, result.getAcceptedRows());
+        assertEquals(2, result.getRejectedRows());
+    }
 }

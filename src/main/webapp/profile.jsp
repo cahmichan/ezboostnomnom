@@ -187,7 +187,7 @@
                             <c:otherwise>
                             <div class="empty-state">
                                 <p>No optimizations yet.</p>
-                                <a href="BoostMe.jsp">Run your first optimization</a>
+                                <a href="BoostMe">Run your first optimization</a>
                             </div>
                             </c:otherwise>
                             </c:choose>

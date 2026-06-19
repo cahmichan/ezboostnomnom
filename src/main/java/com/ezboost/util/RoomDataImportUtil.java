@@ -53,12 +53,12 @@ public class RoomDataImportUtil {
                 try {
                     String roomType = values[0].trim();
                     int numberOfRooms = Integer.parseInt(values[1].trim());
-                    double parsedBaseRate = parseDouble(values[2]);
-                    double minRate = parseDouble(values[3]);
-                    double maxRate = parseDouble(values[4]);
-                    double avgOccupancy = parseDouble(values[5]);
+                    double parsedBaseRate = parseOptionalDouble(values[2]);
+                    double minRate = parseOptionalDouble(values[3]);
+                    double maxRate = parseOptionalDouble(values[4]);
+                    double avgOccupancy = parseOptionalDouble(values[5]);
 
-                    if (roomType.isEmpty() || numberOfRooms <= 0) {
+                    if (roomType.isEmpty() || roomType.length() > 100 || numberOfRooms <= 0 || numberOfRooms > 100000) {
                         rejectedRows++;
                         logger.error("[RoomDataImportUtil] Skipping invalid row {}: {}", lineNumber, line);
                         continue;
@@ -80,6 +80,12 @@ public class RoomDataImportUtil {
                     }
                     if (maxRate <= 0) {
                         maxRate = Math.max(baseRate, minRate);
+                    }
+
+                    if (minRate <= 0 || maxRate <= 0 || avgOccupancy < 0 || avgOccupancy > 100) {
+                        rejectedRows++;
+                        logger.error("[RoomDataImportUtil] Skipping out-of-range row {}", lineNumber);
+                        continue;
                     }
 
                     if (baseRate < minRate) {
@@ -134,7 +140,7 @@ public class RoomDataImportUtil {
                 floorAnchoredCount, suspiciousConstraintCount, warnings);
     }
 
-    private static double parseDouble(String value) {
+    private static double parseOptionalDouble(String value) {
         if (value == null || value.trim().isEmpty()) return 0;
 
         String cleaned = value
@@ -145,11 +151,11 @@ public class RoomDataImportUtil {
                 .replace("%", "")
                 .trim();
 
-        try {
-            return Double.parseDouble(cleaned);
-        } catch (NumberFormatException e) {
-            return 0;
+        double parsed = Double.parseDouble(cleaned);
+        if (!Double.isFinite(parsed)) {
+            throw new NumberFormatException("Non-finite number");
         }
+        return parsed;
     }
 
     public static boolean validateRoomData(List<Room> rooms) {
@@ -160,9 +166,12 @@ public class RoomDataImportUtil {
         for (Room room : rooms) {
             if (room.getName() == null || room.getName().isEmpty()) return false;
             if (room.getTotalRooms() <= 0) return false;
+            if (!Double.isFinite(room.getBaseAdr()) || !Double.isFinite(room.getMinAdr())
+                    || !Double.isFinite(room.getMaxAdr()) || !Double.isFinite(room.getOccupancy())) return false;
             if (room.getMinAdr() <= 0 || room.getMaxAdr() <= 0) return false;
             if (room.getMinAdr() > room.getMaxAdr()) return false;
             if (room.getBaseAdr() < room.getMinAdr() || room.getBaseAdr() > room.getMaxAdr()) return false;
+            if (room.getOccupancy() < 0 || room.getOccupancy() > 100) return false;
         }
 
         return true;
