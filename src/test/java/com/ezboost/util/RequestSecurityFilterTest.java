@@ -1,11 +1,16 @@
 package com.ezboost.util;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 class RequestSecurityFilterTest {
 
@@ -25,5 +30,25 @@ class RequestSecurityFilterTest {
 
         assertNotNull(first);
         assertEquals(first, second);
+    }
+
+    @Test
+    void rejectsAuthenticatedPostWithoutCsrfToken() throws Exception {
+        HttpSession session = Mockito.mock(HttpSession.class);
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        FilterChain chain = Mockito.mock(FilterChain.class);
+        Mockito.when(request.getMethod()).thenReturn("POST");
+        Mockito.when(request.getContextPath()).thenReturn("");
+        Mockito.when(request.getRequestURI()).thenReturn("/DataImport");
+        Mockito.when(request.getSession(false)).thenReturn(session);
+        Mockito.when(session.getAttribute(RequestSecurityFilter.CSRF_SESSION_KEY)).thenReturn("valid-token");
+        Mockito.when(request.getParameter(RequestSecurityFilter.CSRF_PARAMETER)).thenReturn(null);
+        Mockito.when(request.getHeader("X-CSRF-Token")).thenReturn(null);
+
+        new RequestSecurityFilter().doFilter(request, response, chain);
+
+        verify(response).sendError(Mockito.eq(HttpServletResponse.SC_FORBIDDEN), Mockito.anyString());
+        verify(chain, never()).doFilter(Mockito.any(), Mockito.any());
     }
 }
