@@ -96,6 +96,12 @@ public final class DatabaseMigration {
             recordMigration(conn, coreSchemaVersion, "baseline core schema for clean deployments");
             logger.info("Applied EzBoost schema migration {}", coreSchemaVersion);
         }
+        final String rangeConstraintVersion = "008";
+        if (!migrationApplied(conn, rangeConstraintVersion)) {
+            DataRangeMigration.ensureConstraints(conn);
+            recordMigration(conn, rangeConstraintVersion, "database-enforced financial and occupancy ranges");
+            logger.info("Applied EzBoost schema migration {}", rangeConstraintVersion);
+        }
     }
 
     private static void ensureAuditAndOptimizationMetadataTables(Connection conn) throws SQLException {
