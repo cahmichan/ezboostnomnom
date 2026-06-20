@@ -48,12 +48,16 @@ public class InputSafetyFilter implements Filter {
             String[] values = request.getParameterValues(name);
             if (values == null) continue;
             for (String value : values) {
-                if (containsUnsafeCharacters(value)) {
+                if (!isSecretField(name) && containsUnsafeCharacters(value)) {
                     return true;
                 }
             }
         }
         return false;
+    }
+
+    private boolean isSecretField(String name) {
+        return "password".equals(name) || "newPassword".equals(name);
     }
 
     private boolean containsUnsafeCharacters(String value) {
