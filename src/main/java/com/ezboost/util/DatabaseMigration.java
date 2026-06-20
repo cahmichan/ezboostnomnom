@@ -86,6 +86,16 @@ public final class DatabaseMigration {
             recordMigration(conn, multiplierOwnershipVersion, "owner foreign key for multiplier settings");
             logger.info("Applied EzBoost schema migration {}", multiplierOwnershipVersion);
         }
+        final String coreSchemaVersion = "007";
+        if (!migrationApplied(conn, coreSchemaVersion)) {
+            CoreSchemaMigration.ensureCoreTables(conn);
+            ensureMarketSegmentUserScopedConstraint(conn);
+            ensureDataIntegrityConstraints(conn);
+            ensureOwnershipForeignKeys(conn);
+            ensureMultiplierOwnershipForeignKey(conn);
+            recordMigration(conn, coreSchemaVersion, "baseline core schema for clean deployments");
+            logger.info("Applied EzBoost schema migration {}", coreSchemaVersion);
+        }
     }
 
     private static void ensureAuditAndOptimizationMetadataTables(Connection conn) throws SQLException {
