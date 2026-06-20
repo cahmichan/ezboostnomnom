@@ -58,7 +58,7 @@ public class RoomDataImportUtil {
                     double maxRate = parseOptionalDouble(values[4]);
                     double avgOccupancy = parseOptionalDouble(values[5]);
 
-                    if (roomType.isEmpty() || roomType.length() > 100 || numberOfRooms <= 0 || numberOfRooms > 100000) {
+                    if (!DisplayTextValidator.isSafePlainText(roomType, 100) || numberOfRooms <= 0 || numberOfRooms > 100000) {
                         rejectedRows++;
                         logger.error("[RoomDataImportUtil] Skipping invalid row {}: {}", lineNumber, line);
                         continue;

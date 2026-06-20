@@ -69,7 +69,7 @@ public class CSVImportUtil {
                     data.setTotalRevenue(parseDouble(values[3]));
                     data.setAvgRoomRate(parseDouble(values[4]));
 
-                    if (data.getMonthYear().isEmpty() || data.getMonthName().isEmpty()) {
+                    if (!DisplayTextValidator.isSafePlainText(data.getMonthYear(), 7) || !DisplayTextValidator.isSafePlainText(data.getMonthName(), 20)) {
                         rejectedRows++;
                         logger.error("Skipping monthly row {} because month fields are missing: {}", lineNumber, line);
                         continue;

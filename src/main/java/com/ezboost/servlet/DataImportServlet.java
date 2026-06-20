@@ -519,7 +519,7 @@ public class DataImportServlet extends HttpServlet {
         if (filePart.getSize() > MAX_UPLOAD_BYTES) {
             throw new IllegalArgumentException("The " + label + " file exceeds the 10 MB upload limit.");
         }
-        if (fileName == null || !fileName.toLowerCase(java.util.Locale.ROOT).endsWith(".csv")) {
+        if (!com.ezboost.util.DisplayTextValidator.isSafeUploadName(fileName) || !fileName.toLowerCase(java.util.Locale.ROOT).endsWith(".csv")) {
             throw new IllegalArgumentException("Upload a CSV file for " + label + ".");
         }
         String contentType = filePart.getContentType();
