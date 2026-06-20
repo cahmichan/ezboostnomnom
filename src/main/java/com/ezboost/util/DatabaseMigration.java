@@ -364,6 +364,9 @@ public final class DatabaseMigration {
             logger.info("Added BaseADRWasBackfilled column to ActualRoomData");
         }
 
+        if (hasRowsWithNullUserId(conn, "ActualRoomData")) {
+            throw new SQLException("Cannot migrate ActualRoomData: one or more legacy room records have no user owner. Reconcile ownership before restarting EzBoost.");
+        }
         try (PreparedStatement markBackfilled = conn.prepareStatement(
                 "UPDATE ActualRoomData SET BaseADRWasBackfilled = TRUE " +
                         "WHERE BaseADR IS NULL AND MinADR IS NOT NULL");
@@ -372,16 +375,19 @@ public final class DatabaseMigration {
                              "WHERE BaseADR IS NULL AND MinADR IS NOT NULL");
              PreparedStatement defaultBackfillFlag = conn.prepareStatement(
                      "UPDATE ActualRoomData SET BaseADRWasBackfilled = FALSE " +
-                             "WHERE BaseADRWasBackfilled IS NULL");
-             PreparedStatement assignLegacyUser = conn.prepareStatement(
-                     "UPDATE ActualRoomData SET UserID = 0 WHERE UserID IS NULL")) {
+                             "WHERE BaseADRWasBackfilled IS NULL")) {
             markBackfilled.executeUpdate();
             backfillBase.executeUpdate();
             defaultBackfillFlag.executeUpdate();
-            assignLegacyUser.executeUpdate();
         }
     }
 
+    private static boolean hasRowsWithNullUserId(Connection conn, String tableName) throws SQLException {
+        try (Statement statement = conn.createStatement();
+             ResultSet rows = statement.executeQuery("SELECT 1 FROM " + tableName + " WHERE UserID IS NULL FETCH FIRST 1 ROW ONLY")) {
+            return rows.next();
+        }
+    }
     private static void ensureMarketSegmentUserScopedConstraint(Connection conn) throws SQLException {
         DatabaseMetaData metaData = conn.getMetaData();
         if (!tableExists(metaData, "MARKETSEGMENT")) {
