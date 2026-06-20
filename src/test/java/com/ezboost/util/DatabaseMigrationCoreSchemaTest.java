@@ -38,7 +38,7 @@ class DatabaseMigrationCoreSchemaTest {
             try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
                 try (ResultSet history = statement.executeQuery("SELECT COUNT(*) FROM EzBoost_Schema_History")) {
                     history.next();
-                    assertEquals(7, history.getInt(1));
+                    assertEquals(8, history.getInt(1));
                 }
                 DatabaseMetaData metadata = connection.getMetaData();
                 for (String table : new String[]{"USER", "ACTUALROOMDATA", "MONTHLYSEASONDATA", "SEASONTHRESHOLD",

@@ -61,12 +61,15 @@ class DatabaseMigrationTest {
             statement.executeUpdate("CREATE TABLE \"USER\" (UserID INT PRIMARY KEY, FirstName VARCHAR(50), " +
                     "LastName VARCHAR(50), Username VARCHAR(255), Email VARCHAR(320), Password VARCHAR(255), PhoneNumber VARCHAR(30))");
             statement.executeUpdate("INSERT INTO \"USER\" VALUES (1, 'Owner', 'One', ' Owner ', ' Owner@Example.com ', 'hash', '123')");
-            statement.executeUpdate("CREATE TABLE ActualRoomData (RoomDataID INT PRIMARY KEY, UserID INT, RoomType VARCHAR(100), MinADR DOUBLE)");
-            statement.executeUpdate("INSERT INTO ActualRoomData VALUES (1, 1, 'Deluxe', 200.0)");
-            statement.executeUpdate("CREATE TABLE MonthlySeasonData (DataID INT PRIMARY KEY, UserID INT, MonthYear VARCHAR(7))");
-            statement.executeUpdate("INSERT INTO MonthlySeasonData VALUES (1, 1, '2024-01')");
-            statement.executeUpdate("CREATE TABLE SeasonThreshold (ThresholdID INT PRIMARY KEY, UserID INT)");
-            statement.executeUpdate("INSERT INTO SeasonThreshold VALUES (1, 1)");
+            statement.executeUpdate("CREATE TABLE ActualRoomData (RoomDataID INT PRIMARY KEY, UserID INT, RoomType VARCHAR(100), " +
+                    "MinADR DOUBLE, MaxADR DOUBLE, Occupancy DOUBLE, NumberOfRoom INT)");
+            statement.executeUpdate("INSERT INTO ActualRoomData VALUES (1, 1, 'Deluxe', 200.0, 300.0, 75.0, 10)");
+            statement.executeUpdate("CREATE TABLE MonthlySeasonData (DataID INT PRIMARY KEY, UserID INT, MonthYear VARCHAR(7), " +
+                    "MonthName VARCHAR(20), OccupancyRate DOUBLE, TotalRevenue DOUBLE, AvgRoomRate DOUBLE, ClassifiedSeason VARCHAR(20))");
+            statement.executeUpdate("INSERT INTO MonthlySeasonData VALUES (1, 1, '2024-01', 'January', 75.0, 100000.0, 180.0, 'NORMAL')");
+            statement.executeUpdate("CREATE TABLE SeasonThreshold (ThresholdID INT PRIMARY KEY, UserID INT, " +
+                    "ThresholdLowNormal DOUBLE, ThresholdNormalPeak DOUBLE, ThresholdPeakSuperPeak DOUBLE)");
+            statement.executeUpdate("INSERT INTO SeasonThreshold VALUES (1, 1, 65.0, 75.0, 85.0)");
             statement.executeUpdate("CREATE TABLE OptimizationRequest (RequestID INT PRIMARY KEY, UserID INT)");
         }
     }
