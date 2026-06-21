@@ -48,6 +48,10 @@ public class NavigationViewFilter implements Filter {
 
         request.setAttribute("navHomeLink", homeLink);
         request.setAttribute("navBoostLink", boostLink);
+        request.setAttribute("navOnboardingActive", onboarding);
+        request.setAttribute("navOnboardingSteps", OnboardingUtil.STEP_ORDER);
+        request.setAttribute("navOnboardingCurrentIndex", Math.max(0, OnboardingUtil.STEP_ORDER.indexOf(currentStep)));
+        request.setAttribute("navOnboardingStepLabel", OnboardingUtil.getStepLabel(currentStep));
         request.setAttribute("navImportHref", lockedUrl(onboarding, currentStep, OnboardingUtil.STEP_IMPORT, currentUrl, "DataImport"));
         request.setAttribute("navMultiplierHref", lockedUrl(onboarding, currentStep, OnboardingUtil.STEP_MULTIPLIERS, currentUrl, "MultiplierSettings"));
         request.setAttribute("navEventsHref", lockedUrl(onboarding, currentStep, OnboardingUtil.STEP_EVENTS, currentUrl, "EventSettings"));

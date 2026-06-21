@@ -22,6 +22,8 @@ class NavigationViewFilterTest {
 
         verify(request).setAttribute("navHomeLink", "homepage.jsp");
         verify(request).setAttribute("navBoostLink", "DataImport");
+        verify(request).setAttribute("navOnboardingActive", false);
+        verify(request).setAttribute("navOnboardingCurrentIndex", 0);
         verify(chain).doFilter(request, response);
     }
 }
