@@ -302,9 +302,9 @@
             }
         });
 
-        <% if (Boolean.TRUE.equals(request.getAttribute("openEditModal"))) { %>
+        <c:if test="${openEditModal}">
         openEditModal();
-        <% } %>
+        </c:if>
 
         // Animate cards on scroll
         const observerOptions = {

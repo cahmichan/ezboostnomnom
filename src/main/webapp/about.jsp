@@ -1,7 +1,3 @@
-<%@ page import="com.ezboost.model.User" %>
-<%
-    User loggedInUser = (User) session.getAttribute("user");
-%>
 <!DOCTYPE html>
 <html>
 <head>

@@ -1,28 +1,4 @@
-<%@ page import="com.ezboost.model.User" %>
-<%@ page import="com.ezboost.dao.OptimizationRequestDAO" %>
-<%@ page import="com.ezboost.dao.RoomDataDAO" %>
-<%@ page import="com.ezboost.dao.SeasonalityDAO" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%
-    User loggedInUser = (User) session.getAttribute("user");
-    int homepageOptCount = 0;
-    boolean homepageReady = false;
-    String homepageNextLink = "DataImport";
-    String homepageNextLabel = "Finish Setup";
-    if (loggedInUser != null) {
-        homepageOptCount = OptimizationRequestDAO.getOptimizationCount(loggedInUser.getUserId());
-        homepageReady = RoomDataDAO.hasRoomData(loggedInUser.getUserId())
-                && !SeasonalityDAO.getMonthlyDataByUser(loggedInUser.getUserId()).isEmpty()
-                && SeasonalityDAO.getThresholdsByUser(loggedInUser.getUserId()) != null;
-        homepageNextLink = homepageReady ? "BoostMe" : "DataImport";
-        homepageNextLabel = homepageReady ? "Start Optimizing" : "Import Your Data";
-    }
-    request.setAttribute("loggedInUser", loggedInUser);
-    request.setAttribute("homepageOptCount", homepageOptCount);
-    request.setAttribute("homepageReady", homepageReady);
-    request.setAttribute("homepageNextLink", homepageNextLink);
-    request.setAttribute("homepageNextLabel", homepageNextLabel);
-%>
 <!DOCTYPE html>
 <html>
 <head>

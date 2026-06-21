@@ -2,6 +2,7 @@ package com.ezboost.util;
 
 import com.ezboost.dao.RoomDataDAO;
 import com.ezboost.dao.SeasonalityDAO;
+import com.ezboost.dao.OptimizationRequestDAO;
 import com.ezboost.model.User;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -32,11 +33,14 @@ public class NavigationViewFilter implements Filter {
         String currentUrl = OnboardingUtil.getStepUrl(currentStep);
         String homeLink = "homepage.jsp";
         String boostLink = "DataImport";
+        int optimizationCount = 0;
+        boolean ready = false;
 
         if (user != null) {
-            boolean ready = RoomDataDAO.hasRoomData(user.getUserId())
+            ready = RoomDataDAO.hasRoomData(user.getUserId())
                     && !SeasonalityDAO.getMonthlyDataByUser(user.getUserId()).isEmpty()
                     && SeasonalityDAO.getThresholdsByUser(user.getUserId()) != null;
+            optimizationCount = OptimizationRequestDAO.getOptimizationCount(user.getUserId());
             boostLink = ready ? "BoostMe" : "DataImport";
         }
         if (onboarding) {
@@ -61,6 +65,11 @@ public class NavigationViewFilter implements Filter {
         request.setAttribute("navSegmentsClass", navClass(onboarding, currentStep, OnboardingUtil.STEP_SEGMENTS));
         request.setAttribute("navBoostClass", onboarding ? "nav-link nav-link-locked" : "nav-link");
         request.setAttribute("navProfileClass", onboarding ? "nav-link nav-link-locked" : "nav-link");
+        request.setAttribute("loggedInUser", user);
+        request.setAttribute("homepageOptCount", optimizationCount);
+        request.setAttribute("homepageReady", ready);
+        request.setAttribute("homepageNextLink", ready ? "BoostMe" : "DataImport");
+        request.setAttribute("homepageNextLabel", ready ? "Start Optimizing" : "Import Your Data");
     }
 
     private String lockedUrl(boolean onboarding, String currentStep, String targetStep, String currentUrl, String defaultUrl) {
