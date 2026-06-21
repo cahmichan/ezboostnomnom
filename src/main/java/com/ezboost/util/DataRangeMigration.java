@@ -63,14 +63,15 @@ final class DataRangeMigration {
     }
 
     private static boolean tableExists(DatabaseMetaData metadata, String tableName) throws SQLException {
-        try (ResultSet tables = metadata.getTables(null, "APP", tableName, new String[]{"TABLE"})) {
+        try (ResultSet tables = metadata.getTables(null, DerbySchema.current(metadata), tableName, new String[]{"TABLE"})) {
             return tables.next();
         }
     }
 
     private static boolean constraintExists(Connection connection, String tableName, String constraintName) throws SQLException {
         String sql = "SELECT 1 FROM sys.sysconstraints c JOIN sys.systables t ON c.tableid = t.tableid " +
-                "WHERE t.tablename = ? AND c.constraintname = ?";
+                "JOIN sys.sysschemas s ON t.schemaid = s.schemaid " +
+                "WHERE s.schemaname = CURRENT SCHEMA AND t.tablename = ? AND c.constraintname = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, tableName.toUpperCase());
             statement.setString(2, constraintName.toUpperCase());

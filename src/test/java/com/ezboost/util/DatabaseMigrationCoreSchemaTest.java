@@ -50,4 +50,29 @@ class DatabaseMigrationCoreSchemaTest {
             }
         }
     }
+
+    @Test
+    void createsAndReconcilesSchemaForTheConfiguredDerbyAccount() throws Exception {
+        HikariConfig config = new HikariConfig();
+        config.setDriverClassName("org.apache.derby.iapi.jdbc.AutoloadedDriver");
+        config.setJdbcUrl("jdbc:derby:memory:ezboost_schema_user_" + System.nanoTime() + ";create=true");
+        config.setUsername("migrationowner");
+        config.setPassword("test-password");
+        config.setMaximumPoolSize(1);
+        config.setMinimumIdle(0);
+
+        try (HikariDataSource dataSource = new HikariDataSource(config)) {
+            DatabaseMigration.ensureSchema(dataSource);
+            try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
+                try (ResultSet history = statement.executeQuery("SELECT COUNT(*) FROM EzBoost_Schema_History")) {
+                    history.next();
+                    assertEquals(8, history.getInt(1));
+                }
+                try (ResultSet tables = connection.getMetaData().getTables(null, "MIGRATIONOWNER",
+                        "EZBOOST_SCHEMA_HISTORY", new String[]{"TABLE"})) {
+                    assertTrue(tables.next(), "migration history should use the configured Derby account schema");
+                }
+            }
+        }
+    }
 }

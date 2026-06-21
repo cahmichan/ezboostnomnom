@@ -243,7 +243,7 @@ public final class DatabaseMigration {
     }
 
     private static boolean indexExists(DatabaseMetaData metadata, String tableName, String indexName) throws SQLException {
-        try (ResultSet rs = metadata.getIndexInfo(null, "APP", tableName, false, false)) {
+        try (ResultSet rs = metadata.getIndexInfo(null, DerbySchema.current(metadata), tableName, false, false)) {
             while (rs.next()) {
                 if (indexName.equalsIgnoreCase(rs.getString("INDEX_NAME"))) return true;
             }
@@ -435,7 +435,7 @@ public final class DatabaseMigration {
 
     private static void dropGlobalSegmentCodeUniqueConstraints(Connection conn, DatabaseMetaData metaData) throws SQLException {
         List<String> globalUniqueNames = new java.util.ArrayList<>();
-        try (ResultSet rs = metaData.getIndexInfo(null, "APP", "MARKETSEGMENT", true, false)) {
+        try (ResultSet rs = metaData.getIndexInfo(null, DerbySchema.current(metaData), "MARKETSEGMENT", true, false)) {
             while (rs.next()) {
                 String indexName = rs.getString("INDEX_NAME");
                 String columnName = rs.getString("COLUMN_NAME");
@@ -461,7 +461,7 @@ public final class DatabaseMigration {
     private static boolean isSingleColumnIndex(DatabaseMetaData metaData, String tableName, String indexName)
             throws SQLException {
         int columnCount = 0;
-        try (ResultSet rs = metaData.getIndexInfo(null, "APP", tableName, false, false)) {
+        try (ResultSet rs = metaData.getIndexInfo(null, DerbySchema.current(metaData), tableName, false, false)) {
             while (rs.next()) {
                 if (indexName.equals(rs.getString("INDEX_NAME")) && rs.getString("COLUMN_NAME") != null) {
                     columnCount++;
@@ -474,7 +474,8 @@ public final class DatabaseMigration {
     private static boolean constraintExists(Connection conn, String tableName, String constraintName) throws SQLException {
         String sql = "SELECT 1 FROM sys.sysconstraints c " +
                 "JOIN sys.systables t ON c.tableid = t.tableid " +
-                "WHERE t.tablename = ? AND c.constraintname = ?";
+                "JOIN sys.sysschemas s ON t.schemaid = s.schemaid " +
+                "WHERE s.schemaname = CURRENT SCHEMA AND t.tablename = ? AND c.constraintname = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, tableName.toUpperCase());
             stmt.setString(2, constraintName.toUpperCase());
@@ -485,13 +486,13 @@ public final class DatabaseMigration {
     }
 
     private static boolean tableExists(DatabaseMetaData metaData, String tableName) throws SQLException {
-        try (ResultSet rs = metaData.getTables(null, "APP", tableName, new String[]{"TABLE"})) {
+        try (ResultSet rs = metaData.getTables(null, DerbySchema.current(metaData), tableName, new String[]{"TABLE"})) {
             return rs.next();
         }
     }
 
     private static boolean columnExists(DatabaseMetaData metaData, String tableName, String columnName) throws SQLException {
-        try (ResultSet rs = metaData.getColumns(null, "APP", tableName, columnName)) {
+        try (ResultSet rs = metaData.getColumns(null, DerbySchema.current(metaData), tableName, columnName)) {
             return rs.next();
         }
     }

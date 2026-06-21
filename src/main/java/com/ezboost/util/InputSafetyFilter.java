@@ -3,7 +3,6 @@ package com.ezboost.util;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -11,7 +10,6 @@ import java.io.IOException;
 import java.util.Enumeration;
 
 /** Rejects control characters and markup delimiters in normal form fields. */
-@WebFilter("/*")
 public class InputSafetyFilter implements Filter {
 
     @Override

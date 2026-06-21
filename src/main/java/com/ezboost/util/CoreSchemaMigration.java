@@ -55,7 +55,7 @@ final class CoreSchemaMigration {
 
     private static void createIfMissing(Connection connection, DatabaseMetaData metadata, String tableName, String ddl)
             throws SQLException {
-        try (java.sql.ResultSet tables = metadata.getTables(null, "APP", tableName, new String[]{"TABLE"})) {
+        try (java.sql.ResultSet tables = metadata.getTables(null, DerbySchema.current(metadata), tableName, new String[]{"TABLE"})) {
             if (tables.next()) return;
         }
         try (Statement statement = connection.createStatement()) {
