@@ -6,14 +6,12 @@ import com.ezboost.model.User;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
 /** Supplies navigation state to JSPs without performing data access in the view. */
-@WebFilter("/*")
 public class NavigationViewFilter implements Filter {
 
     @Override

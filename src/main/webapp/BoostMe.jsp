@@ -31,10 +31,12 @@
     List<Map<String, Object>> monthlyForecast = (List<Map<String, Object>>) request.getAttribute("monthlyForecast");
     Integer forecastYear = (Integer) request.getAttribute("forecastYear");
     boolean hasResults = expectedRevenue != null && estimatedRevenue != null && rooms != null && !rooms.isEmpty();
+    String csrfToken = session != null && session.getAttribute("csrfToken") instanceof String
+            ? (String) session.getAttribute("csrfToken") : "";
 %>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>EzBoost - BoostMe</title>
@@ -76,13 +78,13 @@
         </section>
 
         <% if (error != null && !error.isEmpty()) { %>
-        <div class="alert-modern alert-danger" style="margin-bottom: 1.5rem;">
+        <div class="alert-modern alert-danger" role="alert" style="margin-bottom: 1.5rem;">
             <i class="bi bi-exclamation-triangle-fill"></i>
             <span><%= HtmlEscaper.escape(error) %></span>
         </div>
         <% } %>
         <% if (optimizationWarning != null && !optimizationWarning.isEmpty()) { %>
-        <div class="alert-modern alert-warning" style="margin-bottom: 1.5rem;">
+        <div class="alert-modern alert-warning" role="status" aria-live="polite" style="margin-bottom: 1.5rem;">
             <i class="bi bi-exclamation-circle-fill"></i>
             <span><%= HtmlEscaper.escape(optimizationWarning) %></span>
         </div>
@@ -132,14 +134,21 @@
                 </div>
 
                 <form action="RunGA" method="post" id="optimizeForm" class="prompt-form">
+                    <input type="hidden" name="csrfToken" value="<%= HtmlEscaper.escape(csrfToken) %>">
                     <div class="prompt-input-row">
                         <span class="input-prefix">RM</span>
+                        <label class="visually-hidden" for="expectedRevenue">Target revenue in Malaysian ringgit</label>
                         <input type="number"
                                id="expectedRevenue"
                                name="expectedRevenue"
                                class="prompt-input"
                                placeholder="0.00"
                                value="<%= expectedRevenue != null ? String.format(Locale.US, "%.2f", expectedRevenue) : "" %>"
+                               min="0.01"
+                               step="0.01"
+                               inputmode="decimal"
+                               autocomplete="off"
+                               aria-describedby="revenueTargetHelp"
                                required>
                     </div>
 
@@ -147,9 +156,9 @@
                         <div class="prompt-pills">
                             <span class="prompt-pill"><%= roomTypeCount %> room types</span>
                             <span class="prompt-pill"><%= monthlyCount %> demand months</span>
-                            <span class="prompt-pill">Global season multipliers</span>
+                            <span class="prompt-pill" id="revenueTargetHelp">Global season multipliers</span>
                         </div>
-                        <button type="submit" class="run-button" <%= readyForOptimization ? "" : "disabled" %>>Run Optimization</button>
+                        <button type="submit" class="run-button" <%= readyForOptimization ? "" : "disabled aria-disabled=\"true\"" %>>Run Optimization</button>
                     </div>
                 </form>
             </div>
@@ -228,19 +237,20 @@
                 </div>
 
                 <div class="table-wrapper">
-                    <table class="data-table">
+                    <table class="data-table" aria-label="Seasonal room price recommendations">
+                        <caption class="visually-hidden">Seasonal room price recommendations and estimated revenue by room type.</caption>
                         <thead>
                             <tr>
-                                <th>Room Type</th>
-                                <th>Rooms</th>
-                                <th>Base ADR</th>
-                                <th>Min ADR</th>
-                                <th>Max ADR</th>
-                                <th>Low Season</th>
-                                <th>Normal Season</th>
-                                <th>Peak Season</th>
-                                <th>Super Peak Season</th>
-                                <th>Estimated Revenue</th>
+                                <th scope="col">Room Type</th>
+                                <th scope="col">Rooms</th>
+                                <th scope="col">Base ADR</th>
+                                <th scope="col">Min ADR</th>
+                                <th scope="col">Max ADR</th>
+                                <th scope="col">Low Season</th>
+                                <th scope="col">Normal Season</th>
+                                <th scope="col">Peak Season</th>
+                                <th scope="col">Super Peak Season</th>
+                                <th scope="col">Estimated Revenue</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -326,14 +336,15 @@
                 </div>
 
                 <div class="table-wrapper">
-                    <table class="data-table">
+                    <table class="data-table" aria-label="Market segment price display">
+                        <caption class="visually-hidden">Post-optimization price display by room type, season, and market segment.</caption>
                         <thead>
                             <tr>
-                                <th>Room Type</th>
-                                <th>Season</th>
-                                <th>Base Price</th>
+                                <th scope="col">Room Type</th>
+                                <th scope="col">Season</th>
+                                <th scope="col">Base Price</th>
                                 <% for (MarketSegment segment : marketSegments) { %>
-                                <th><%= HtmlEscaper.escape(segment.getSegmentCode()) %></th>
+                                <th scope="col"><%= HtmlEscaper.escape(segment.getSegmentCode()) %></th>
                                 <% } %>
                             </tr>
                         </thead>
@@ -392,16 +403,17 @@
                     }
                 %>
                 <div class="table-wrapper forecast-table-wrapper">
-                    <table class="data-table">
+                    <table class="data-table" aria-label="Monthly forecast and event adjustments">
+                        <caption class="visually-hidden">Monthly forecast pricing with base seasons, event overrides, and room prices.</caption>
                         <thead>
                             <tr>
-                                <th>Month</th>
-                                <th>Events</th>
-                                <th>Base Season</th>
-                                <th>Adjusted Season</th>
+                                <th scope="col">Month</th>
+                                <th scope="col">Events</th>
+                                <th scope="col">Base Season</th>
+                                <th scope="col">Adjusted Season</th>
                                 <% if (firstRoomPrices != null) {
                                     for (String roomName : firstRoomPrices.keySet()) { %>
-                                <th><%= HtmlEscaper.escape(roomName) %></th>
+                                <th scope="col"><%= HtmlEscaper.escape(roomName) %></th>
                                 <% } } %>
                             </tr>
                         </thead>
@@ -456,7 +468,7 @@
         <% } %>
     </div>
 
-    <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite" aria-atomic="true">
         <div class="loading-card">
             <div class="loading-spinner"></div>
             <h3 class="loading-title">Optimizing Revenue...</h3>
