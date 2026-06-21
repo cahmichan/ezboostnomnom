@@ -42,4 +42,4 @@ If a migration fails, restore the backup before retrying. Do not delete rows to 
 - Use the `X-Request-Id` response header to correlate a user error with server logs.
 - Rotate a Calendarific API key by saving a replacement in Event Settings; the value is never displayed after saving.
 - The GitHub baseline commit `f03655a` is the pre-hardening recovery point. Each later hardening change is a separate commit on `main`.
-- Run `mvn clean verify` before every deployment. A release is valid only when the full suite passes and the WAR packages successfully.
+- Run `mvn clean verify` before every deployment. It enforces dependency convergence, runs the full suite, produces coverage, and packages the WAR. For a production release, also run `mvn -Pdependency-check -DnvdApiKey=<NVD API key> clean verify`; the OWASP scan produces HTML/JSON reports and fails on CVSS 7.0 or higher. The NVD API key is required because anonymous NVD requests are rate-limited.
