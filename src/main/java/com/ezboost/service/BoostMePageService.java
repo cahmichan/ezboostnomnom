@@ -43,7 +43,7 @@ public final class BoostMePageService {
     }
 
     @SuppressWarnings("unchecked")
-    private static View buildView(HttpServletRequest request) {
+    static View buildView(HttpServletRequest request) {
         DecimalFormat money = new DecimalFormat("#,##0.00");
         DecimalFormat number = new DecimalFormat("0.00");
         int roomTypeCount = intAttribute(request, "roomTypeCount");
