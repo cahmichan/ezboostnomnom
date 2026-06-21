@@ -102,6 +102,12 @@ public final class DatabaseMigration {
             recordMigration(conn, rangeConstraintVersion, "database-enforced financial and occupancy ranges");
             logger.info("Applied EzBoost schema migration {}", rangeConstraintVersion);
         }
+        final String thresholdTimestampVersion = "009";
+        if (!migrationApplied(conn, thresholdTimestampVersion)) {
+            ensureSeasonThresholdTimestamps(conn);
+            recordMigration(conn, thresholdTimestampVersion, "season threshold audit timestamps");
+            logger.info("Applied EzBoost schema migration {}", thresholdTimestampVersion);
+        }
     }
 
     private static void ensureAuditAndOptimizationMetadataTables(Connection conn) throws SQLException {
@@ -232,6 +238,29 @@ public final class DatabaseMigration {
         createIndexIfMissing(conn, metadata, "MONTHLYSEASONDATA", "IDX_MONTHLY_USER", "UserID");
         createIndexIfMissing(conn, metadata, "FUTUREEVENT", "IDX_EVENT_USER_DATE", "user_id, event_date");
         createIndexIfMissing(conn, metadata, "OPTIMIZATIONREQUEST", "IDX_REQUEST_USER", "UserID");
+    }
+
+    private static void ensureSeasonThresholdTimestamps(Connection conn) throws SQLException {
+        DatabaseMetaData metadata = conn.getMetaData();
+        if (!tableExists(metadata, "SEASONTHRESHOLD")) {
+            return;
+        }
+        if (!columnExists(metadata, "SEASONTHRESHOLD", "LASTUPDATED")) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate("ALTER TABLE SeasonThreshold ADD COLUMN LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+        }
+        if (!columnExists(metadata, "SEASONTHRESHOLD", "CREATEDDATE")) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate("ALTER TABLE SeasonThreshold ADD COLUMN CreatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+        }
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("UPDATE SeasonThreshold SET CreatedDate = COALESCE(CreatedDate, LastUpdated, CURRENT_TIMESTAMP) "
+                    + "WHERE CreatedDate IS NULL");
+            stmt.executeUpdate("UPDATE SeasonThreshold SET LastUpdated = COALESCE(LastUpdated, CreatedDate, CURRENT_TIMESTAMP) "
+                    + "WHERE LastUpdated IS NULL");
+        }
     }
 
     private static void createIndexIfMissing(Connection conn, DatabaseMetaData metadata, String tableName,

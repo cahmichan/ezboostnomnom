@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DatabaseMigrationTest {
@@ -28,7 +29,7 @@ class DatabaseMigrationTest {
             try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
                 try (ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM EzBoost_Schema_History")) {
                     rs.next();
-                    assertEquals(8, rs.getInt(1));
+                    assertEquals(9, rs.getInt(1));
                 }
                 DatabaseMetaData metadata = connection.getMetaData();
                 int operationalTableCount = 0;
@@ -44,6 +45,12 @@ class DatabaseMigrationTest {
                     rs.next();
                     assertEquals("owner@example.com", rs.getString("EMAIL_KEY"));
                     assertEquals("owner", rs.getString("USERNAME_KEY"));
+                }
+                try (ResultSet rs = statement.executeQuery(
+                        "SELECT CreatedDate, LastUpdated FROM SeasonThreshold WHERE UserID = 1")) {
+                    rs.next();
+                    assertNotNull(rs.getTimestamp("CreatedDate"));
+                    assertNotNull(rs.getTimestamp("LastUpdated"));
                 }
 
                 assertThrows(java.sql.SQLException.class, () -> statement.executeUpdate(
