@@ -178,7 +178,8 @@ public final class DatabaseMigration {
     private static void addForeignKeyIfSafe(Connection conn, DatabaseMetaData metadata, String tableName,
                                             String columnName, String constraintName) throws SQLException {
         if (!tableExists(metadata, tableName) || !columnExists(metadata, tableName, columnName)
-                || constraintExists(conn, tableName, constraintName)) {
+                || constraintExists(conn, tableName, constraintName)
+                || equivalentUserForeignKeyExists(metadata, tableName, columnName)) {
             return;
         }
         String orphanSql = "SELECT 1 FROM " + quotedTable(tableName) + " child LEFT JOIN \"USER\" owner " +
@@ -194,6 +195,30 @@ public final class DatabaseMigration {
             stmt.executeUpdate("ALTER TABLE " + quotedTable(tableName) + " ADD CONSTRAINT " + constraintName +
                     " FOREIGN KEY (" + columnName + ") REFERENCES \"USER\" (UserID)");
         }
+    }
+
+    /**
+     * Legacy Derby databases can contain generated foreign-key names. Treat a
+     * constraint on the same child column pointing to USER(UserID) as
+     * equivalent, regardless of its generated name or delete rule. Creating a
+     * second copy is not only redundant; Derby can reject it when an existing
+     * cascade path already connects the two tables.
+     */
+    private static boolean equivalentUserForeignKeyExists(DatabaseMetaData metadata, String tableName,
+                                                          String columnName) throws SQLException {
+        try (ResultSet foreignKeys = metadata.getImportedKeys(null, DerbySchema.current(metadata), tableName)) {
+            while (foreignKeys.next()) {
+                String primaryTable = foreignKeys.getString("PKTABLE_NAME");
+                String primaryColumn = foreignKeys.getString("PKCOLUMN_NAME");
+                String foreignColumn = foreignKeys.getString("FKCOLUMN_NAME");
+                if ("USER".equalsIgnoreCase(primaryTable)
+                        && "USERID".equalsIgnoreCase(primaryColumn)
+                        && columnName.equalsIgnoreCase(foreignColumn)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static void ensureCanonicalUserIdentity(Connection conn, DatabaseMetaData metadata) throws SQLException {
