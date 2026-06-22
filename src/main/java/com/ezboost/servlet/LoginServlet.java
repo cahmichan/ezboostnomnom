@@ -1,5 +1,6 @@
 package com.ezboost.servlet;
 
+import com.ezboost.dao.AuditEventDAO;
 import com.ezboost.dao.UserDAO;
 import com.ezboost.model.User;
 import com.ezboost.util.UserValidationUtil;
@@ -44,6 +45,7 @@ public class LoginServlet extends HttpServlet {
 
             session.setAttribute("user", user);
             session.setAttribute("userId", user.getUserId());
+            AuditEventDAO.record(user.getUserId(), "ACCOUNT_LOGIN", "User", "SUCCESS");
 
             response.sendRedirect("homepage.jsp");
         } else {

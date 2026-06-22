@@ -1,5 +1,6 @@
 package com.ezboost.servlet;
 
+import com.ezboost.dao.AuditEventDAO;
 import com.ezboost.dao.MarketSegmentDAO;
 import com.ezboost.dao.OptimizationReportSnapshotDAO;
 import com.ezboost.model.MarketSegment;
@@ -25,7 +26,7 @@ public class DownloadReportServlet extends HttpServlet {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
@@ -91,6 +92,12 @@ public class DownloadReportServlet extends HttpServlet {
         try (OutputStream out = response.getOutputStream()) {
             out.write(reportBytes);
         }
+        AuditEventDAO.record(user.getUserId(), "REPORT_EXPORT", "OptimizationReport", "SUCCESS");
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Use POST to export reports.");
     }
 
     private void exportSnapshot(String requestIdParameter, User user, HttpServletResponse response) throws IOException {
@@ -117,6 +124,7 @@ public class DownloadReportServlet extends HttpServlet {
             try (OutputStream out = response.getOutputStream()) {
                 out.write(reportBytes);
             }
+            AuditEventDAO.record(user.getUserId(), "REPORT_EXPORT", "OptimizationReportSnapshot", "SUCCESS");
         } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Saved report could not be generated.");
         }

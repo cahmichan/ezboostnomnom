@@ -824,12 +824,15 @@ body {
 .download-btn {
     background: var(--accent-dark);
     color: var(--text-inverse);
+    border: 0;
+    font-family: var(--font-body);
     text-decoration: none;
     padding: 10px 22px;
     border-radius: var(--radius-pill);
     font-weight: 600;
     font-size: 0.85rem;
     transition: all var(--transition-normal);
+    cursor: pointer;
     flex-shrink: 0;
 }
 

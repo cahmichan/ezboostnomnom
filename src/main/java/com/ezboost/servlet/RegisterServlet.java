@@ -1,5 +1,6 @@
 package com.ezboost.servlet;
 
+import com.ezboost.dao.AuditEventDAO;
 import com.ezboost.dao.UserDAO;
 import com.ezboost.model.User;
 import com.ezboost.util.UserValidationUtil;
@@ -60,6 +61,7 @@ public class RegisterServlet extends HttpServlet {
         logger.debug("Database insert status: {}", isRegistered);
 
         if (isRegistered) {
+            AuditEventDAO.record(newUser.getUserId(), "ACCOUNT_REGISTER", "User", "SUCCESS");
             response.sendRedirect("login.jsp?registered=1");
         } else {
             forwardError(request, response, "Registration failed due to a server error. Please try again.");

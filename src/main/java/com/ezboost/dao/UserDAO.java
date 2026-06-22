@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class UserDAO {
 
@@ -21,7 +22,7 @@ public class UserDAO {
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setString(1, user.getFirstName());
             stmt.setString(2, user.getLastName());
@@ -35,7 +36,17 @@ public class UserDAO {
             stmt.setString(10, canonical(user.getEmail()));
             stmt.setString(11, canonical(user.getUsername()));
 
-            return stmt.executeUpdate() > 0;
+            if (stmt.executeUpdate() != 1) {
+                return false;
+            }
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (!generatedKeys.next()) {
+                    logger.error("Registered user did not receive a generated user ID");
+                    return false;
+                }
+                user.setUserId(generatedKeys.getInt(1));
+                return true;
+            }
         } catch (SQLException e) {
             logger.error("Failed to register user {}", user.getEmail(), e);
         }
