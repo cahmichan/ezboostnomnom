@@ -218,7 +218,8 @@ public final class DatabaseMigration {
 
     private static void addUniqueConstraintIfSafe(Connection conn, DatabaseMetaData metadata, String tableName,
                                                    String constraintName, String columns) throws SQLException {
-        if (!tableExists(metadata, tableName) || constraintExists(conn, tableName, constraintName)) return;
+        if (!tableExists(metadata, tableName) || constraintExists(conn, tableName, constraintName)
+                || equivalentUniqueConstraintExists(conn, metadata, tableName, columns)) return;
         String duplicateSql = "SELECT " + columns + ", COUNT(*) FROM " + quotedTable(tableName) +
                 " GROUP BY " + columns + " HAVING COUNT(*) > 1 FETCH FIRST 1 ROW ONLY";
         try (Statement duplicateCheck = conn.createStatement(); ResultSet duplicates = duplicateCheck.executeQuery(duplicateSql)) {
@@ -231,6 +232,72 @@ public final class DatabaseMigration {
             stmt.executeUpdate("ALTER TABLE " + quotedTable(tableName) + " ADD CONSTRAINT " + constraintName +
                     " UNIQUE (" + columns + ")");
         }
+    }
+
+    /**
+     * Derby assigns generated names to unnamed UNIQUE clauses in legacy schemas.
+     * Compare their indexed columns rather than relying only on our preferred
+     * constraint name, otherwise an idempotent migration can fail by attempting
+     * to add a second equivalent uniqueness constraint.
+     */
+    private static boolean equivalentUniqueConstraintExists(Connection conn, DatabaseMetaData metadata, String tableName,
+                                                            String columns) throws SQLException {
+        java.util.List<String> expected = normalizedColumns(columns);
+        java.util.Map<Integer, String> columnsByPosition = new java.util.HashMap<>();
+        try (ResultSet rs = metadata.getColumns(null, DerbySchema.current(metadata), tableName, null)) {
+            while (rs.next()) {
+                String columnName = rs.getString("COLUMN_NAME");
+                int position = rs.getInt("ORDINAL_POSITION");
+                if (columnName != null && position > 0) {
+                    columnsByPosition.put(position, columnName.toUpperCase(java.util.Locale.ROOT));
+                }
+            }
+        }
+
+        String sql = "SELECT CAST(cg.descriptor AS VARCHAR(32672)) "
+                + "FROM SYS.SYSCONSTRAINTS c "
+                + "JOIN SYS.SYSKEYS k ON c.constraintid = k.constraintid "
+                + "JOIN SYS.SYSCONGLOMERATES cg ON k.conglomerateid = cg.conglomerateid "
+                + "JOIN SYS.SYSTABLES t ON c.tableid = t.tableid "
+                + "JOIN SYS.SYSSCHEMAS s ON t.schemaid = s.schemaid "
+                + "WHERE c.type IN ('U', 'P') AND t.tablename = ? AND s.schemaname = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tableName.toUpperCase(java.util.Locale.ROOT));
+            stmt.setString(2, DerbySchema.current(metadata));
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    java.util.List<String> indexedColumns = descriptorColumns(rs.getString(1), columnsByPosition);
+                    if (expected.equals(indexedColumns)) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static java.util.List<String> descriptorColumns(String descriptor,
+                                                             java.util.Map<Integer, String> columnsByPosition) {
+        if (descriptor == null) return java.util.Collections.emptyList();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\(([^)]*)\\)\\s*$").matcher(descriptor);
+        if (!matcher.find()) return java.util.Collections.emptyList();
+        java.util.List<String> columns = new java.util.ArrayList<>();
+        for (String position : matcher.group(1).split(",")) {
+            try {
+                String column = columnsByPosition.get(Integer.parseInt(position.trim()));
+                if (column == null) return java.util.Collections.emptyList();
+                columns.add(column);
+            } catch (NumberFormatException ignored) {
+                return java.util.Collections.emptyList();
+            }
+        }
+        return columns;
+    }
+
+    private static java.util.List<String> normalizedColumns(String columns) {
+        java.util.List<String> normalized = new java.util.ArrayList<>();
+        for (String column : columns.split(",")) {
+            normalized.add(column.trim().replace("\"", "").toUpperCase(java.util.Locale.ROOT));
+        }
+        return normalized;
     }
 
     private static void ensureIndexes(Connection conn, DatabaseMetaData metadata) throws SQLException {

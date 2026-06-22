@@ -76,6 +76,7 @@ class DatabaseMigrationTest {
             statement.executeUpdate("INSERT INTO MonthlySeasonData VALUES (1, 1, '2024-01', 'January', 75.0, 100000.0, 180.0, 'NORMAL')");
             statement.executeUpdate("CREATE TABLE SeasonThreshold (ThresholdID INT PRIMARY KEY, UserID INT, " +
                     "ThresholdLowNormal DOUBLE, ThresholdNormalPeak DOUBLE, ThresholdPeakSuperPeak DOUBLE)");
+            statement.executeUpdate("ALTER TABLE SeasonThreshold ADD UNIQUE (UserID)");
             statement.executeUpdate("INSERT INTO SeasonThreshold VALUES (1, 1, 65.0, 75.0, 85.0)");
             statement.executeUpdate("CREATE TABLE OptimizationRequest (RequestID INT PRIMARY KEY, UserID INT)");
         }
