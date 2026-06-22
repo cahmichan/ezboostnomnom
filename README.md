@@ -66,7 +66,7 @@ EZBOOST_API_KEY_ENCRYPTION_KEY=<base64-encoded-32-byte-key>
 
 `EZBOOST_DB_USER` and `EZBOOST_DB_PASSWORD` are mandatory. The application deliberately fails at startup if either is absent. Keep the API-key encryption key safe and stable: replacing or losing it makes previously encrypted Calendarific keys unreadable.
 
-See [OPERATIONS.md](OPERATIONS.md) for the GlassFish configuration commands and Derby backup/recovery procedure.
+Restart the application-server domain after changing any of these values. Configure the JDBC URL as a single system-property value; on Windows `asadmin` may require its colon characters to be escaped.
 
 ### 2. Build and test
 
@@ -133,7 +133,7 @@ Before deploying to a database with real data:
 3. Check `/EzBoost-main/health`.
 4. Confirm existing user, room, monthly, event, and optimisation record counts.
 
-Detailed backup, restore, and recovery instructions are in [OPERATIONS.md](OPERATIONS.md).
+Keep backups access-controlled and test the restore procedure before relying on it for a production deployment.
 
 ## Repository guide
 
@@ -143,9 +143,6 @@ Detailed backup, restore, and recovery instructions are in [OPERATIONS.md](OPERA
 | `src/main/webapp` | JSP views, CSS, JavaScript, and `WEB-INF/web.xml` |
 | `src/test` | Unit, servlet/service, migration, import rollback, and Derby integration tests |
 | `sample_data` | Sanitised data suitable for local experimentation |
-| [OPERATIONS.md](OPERATIONS.md) | Deployment, configuration, backup, restore, and recovery guide |
-| [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) | Current engineering roadmap and product boundaries |
-| [LEARNING_GUIDE.md](LEARNING_GUIDE.md) | Project learning and implementation notes |
 
 ## Development notes
 
